@@ -5,28 +5,34 @@ import (
 
 	pb "taobaoke/api"
 	"taobaoke/internal/model"
+
 	"github.com/go-kratos/kratos/pkg/conf/paladin"
 	"github.com/go-kratos/kratos/pkg/log"
 	bm "github.com/go-kratos/kratos/pkg/net/http/blademaster"
 )
 
-var svc pb.DemoServer
+var svc pb.TBKServer
 
 // New new a bm server.
-func New(s pb.DemoServer) (engine *bm.Engine, err error) {
+func New(s pb.TBKServer) (engine *bm.Engine, err error) {
 	var (
-		cfg bm.ServerConfig
+		cfg struct {
+			Server *bm.ServerConfig
+			Client *bm.ClientConfig
+		}
+	)
+	var (
 		ct paladin.TOML
 	)
 	if err = paladin.Get("http.toml").Unmarshal(&ct); err != nil {
 		return
 	}
-	if err = ct.Get("Server").UnmarshalTOML(&cfg); err != nil {
+	if err = ct.Get("bm").UnmarshalTOML(&cfg); err != nil {
 		return
 	}
 	svc = s
-	engine = bm.DefaultServer(&cfg)
-	pb.RegisterDemoBMServer(engine, s)
+	engine = bm.DefaultServer(cfg.Server)
+	pb.RegisterTBKBMServer(engine, s)
 	initRouter(engine)
 	err = engine.Start()
 	return
@@ -34,7 +40,7 @@ func New(s pb.DemoServer) (engine *bm.Engine, err error) {
 
 func initRouter(e *bm.Engine) {
 	e.Ping(ping)
-	g := e.Group("/taobaoke")
+	g := e.Group("/fileSystem")
 	{
 		g.GET("/start", howToStart)
 	}

@@ -8,29 +8,57 @@ package dao
 // Injectors from wire.go:
 
 func newTestDao() (*dao, func(), error) {
-	redis, cleanup, err := NewRedis()
+	logger, cleanup, err := NewLogger()
 	if err != nil {
 		return nil, nil, err
 	}
-	memcache, cleanup2, err := NewMC()
+	redis, cleanup2, err := NewRedis()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	db, cleanup3, err := NewDB()
+	memcache, cleanup3, err := NewMC()
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	daoDao, cleanup4, err := newDao(redis, memcache, db)
+	db, cleanup4, err := NewDB()
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
+	client, cleanup5, err := NewMongo()
+	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	orderClient, err := NewOrderClient(client, logger)
+	if err != nil {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	daoDao, cleanup6, err := newDao(logger, redis, memcache, db, client, orderClient)
+	if err != nil {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	return daoDao, func() {
+		cleanup6()
+		cleanup5()
 		cleanup4()
 		cleanup3()
 		cleanup2()

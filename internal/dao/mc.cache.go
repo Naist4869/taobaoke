@@ -19,9 +19,10 @@ import (
 	"context"
 	"fmt"
 
+	"taobaoke/internal/model"
+
 	"github.com/go-kratos/kratos/pkg/cache/memcache"
 	"github.com/go-kratos/kratos/pkg/log"
-	"taobaoke/internal/model"
 )
 
 var _ _mc

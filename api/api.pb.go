@@ -111,37 +111,213 @@ func (m *HelloResp) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_HelloResp proto.InternalMessageInfo
 
+type TitleConvertTBKeyReq struct {
+	Title                string   `protobuf:"bytes,1,opt,name=Title,proto3" json:"Title,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TitleConvertTBKeyReq) Reset()         { *m = TitleConvertTBKeyReq{} }
+func (m *TitleConvertTBKeyReq) String() string { return proto.CompactTextString(m) }
+func (*TitleConvertTBKeyReq) ProtoMessage()    {}
+func (*TitleConvertTBKeyReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{2}
+}
+func (m *TitleConvertTBKeyReq) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TitleConvertTBKeyReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TitleConvertTBKeyReq.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TitleConvertTBKeyReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TitleConvertTBKeyReq.Merge(m, src)
+}
+func (m *TitleConvertTBKeyReq) XXX_Size() int {
+	return m.Size()
+}
+func (m *TitleConvertTBKeyReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_TitleConvertTBKeyReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TitleConvertTBKeyReq proto.InternalMessageInfo
+
+type TitleConvertTBKeyResp struct {
+	TBKey                string   `protobuf:"bytes,1,opt,name=TBKey,proto3" json:"TBKey,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TitleConvertTBKeyResp) Reset()         { *m = TitleConvertTBKeyResp{} }
+func (m *TitleConvertTBKeyResp) String() string { return proto.CompactTextString(m) }
+func (*TitleConvertTBKeyResp) ProtoMessage()    {}
+func (*TitleConvertTBKeyResp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{3}
+}
+func (m *TitleConvertTBKeyResp) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TitleConvertTBKeyResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TitleConvertTBKeyResp.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TitleConvertTBKeyResp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TitleConvertTBKeyResp.Merge(m, src)
+}
+func (m *TitleConvertTBKeyResp) XXX_Size() int {
+	return m.Size()
+}
+func (m *TitleConvertTBKeyResp) XXX_DiscardUnknown() {
+	xxx_messageInfo_TitleConvertTBKeyResp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TitleConvertTBKeyResp proto.InternalMessageInfo
+
+type KeyConvertKeyReq struct {
+	FromKey              string   `protobuf:"bytes,1,opt,name=FromKey,proto3" json:"FromKey,omitempty"`
+	UserID               string   `protobuf:"bytes,2,opt,name=UserID,proto3" json:"UserID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *KeyConvertKeyReq) Reset()         { *m = KeyConvertKeyReq{} }
+func (m *KeyConvertKeyReq) String() string { return proto.CompactTextString(m) }
+func (*KeyConvertKeyReq) ProtoMessage()    {}
+func (*KeyConvertKeyReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{4}
+}
+func (m *KeyConvertKeyReq) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeyConvertKeyReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeyConvertKeyReq.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeyConvertKeyReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyConvertKeyReq.Merge(m, src)
+}
+func (m *KeyConvertKeyReq) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeyConvertKeyReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyConvertKeyReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeyConvertKeyReq proto.InternalMessageInfo
+
+type KeyConvertKeyResp struct {
+	ToKey                string   `protobuf:"bytes,1,opt,name=ToKey,proto3" json:"ToKey,omitempty"`
+	Price                string   `protobuf:"bytes,2,opt,name=Price,proto3" json:"Price,omitempty"`
+	Rebate               string   `protobuf:"bytes,3,opt,name=Rebate,proto3" json:"Rebate,omitempty"`
+	Title                string   `protobuf:"bytes,4,opt,name=Title,proto3" json:"Title,omitempty"`
+	PicURL               string   `protobuf:"bytes,5,opt,name=PicURL,proto3" json:"PicURL,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *KeyConvertKeyResp) Reset()         { *m = KeyConvertKeyResp{} }
+func (m *KeyConvertKeyResp) String() string { return proto.CompactTextString(m) }
+func (*KeyConvertKeyResp) ProtoMessage()    {}
+func (*KeyConvertKeyResp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{5}
+}
+func (m *KeyConvertKeyResp) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeyConvertKeyResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeyConvertKeyResp.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeyConvertKeyResp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyConvertKeyResp.Merge(m, src)
+}
+func (m *KeyConvertKeyResp) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeyConvertKeyResp) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyConvertKeyResp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeyConvertKeyResp proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*HelloReq)(nil), "demo.service.v1.HelloReq")
 	proto.RegisterType((*HelloResp)(nil), "demo.service.v1.HelloResp")
+	proto.RegisterType((*TitleConvertTBKeyReq)(nil), "demo.service.v1.TitleConvertTBKeyReq")
+	proto.RegisterType((*TitleConvertTBKeyResp)(nil), "demo.service.v1.TitleConvertTBKeyResp")
+	proto.RegisterType((*KeyConvertKeyReq)(nil), "demo.service.v1.KeyConvertKeyReq")
+	proto.RegisterType((*KeyConvertKeyResp)(nil), "demo.service.v1.KeyConvertKeyResp")
 }
 
 func init() { proto.RegisterFile("api.proto", fileDescriptor_00212fb1f9d3bf1c) }
 
 var fileDescriptor_00212fb1f9d3bf1c = []byte{
-	// 341 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x50, 0x3f, 0x4b, 0xc3, 0x40,
-	0x14, 0x6f, 0xb4, 0xd8, 0xf6, 0x3a, 0x08, 0x37, 0x94, 0x36, 0x4a, 0x5a, 0x22, 0x82, 0x4b, 0x2f,
-	0x58, 0x41, 0xa1, 0xe0, 0xd2, 0x2a, 0x38, 0x38, 0x48, 0xc4, 0xc5, 0x45, 0xae, 0xcd, 0x35, 0x3d,
-	0x4c, 0xee, 0x5d, 0x93, 0x6b, 0xa1, 0xab, 0x5f, 0xc1, 0xc5, 0x8f, 0xd4, 0x51, 0x70, 0x2f, 0xda,
-	0x3a, 0x39, 0xfa, 0x09, 0x24, 0x97, 0x04, 0x41, 0xa8, 0xdb, 0xbd, 0xdf, 0xbf, 0x7b, 0xbf, 0x87,
-	0x2a, 0x54, 0x72, 0x22, 0x23, 0x50, 0x80, 0x77, 0x3d, 0x16, 0x02, 0x89, 0x59, 0x34, 0xe3, 0x43,
-	0x46, 0x66, 0xc7, 0x66, 0xdb, 0xe7, 0x6a, 0x3c, 0x1d, 0x90, 0x21, 0x84, 0x8e, 0x0f, 0x3e, 0x38,
-	0x5a, 0x37, 0x98, 0x8e, 0xf4, 0xa4, 0x07, 0xfd, 0x4a, 0xfd, 0xe6, 0x9e, 0x0f, 0xe0, 0x07, 0xec,
-	0x57, 0xc5, 0x42, 0xa9, 0xe6, 0x19, 0xb9, 0x9f, 0x91, 0x54, 0x72, 0x87, 0x0a, 0x01, 0x8a, 0x2a,
-	0x0e, 0x22, 0x4e, 0x59, 0xbb, 0x8f, 0xca, 0x57, 0x2c, 0x08, 0xc0, 0x65, 0x13, 0x7c, 0x86, 0x8a,
-	0x82, 0x86, 0xac, 0x6e, 0xb4, 0x8c, 0xa3, 0x4a, 0xef, 0xe0, 0x7b, 0xd9, 0x6c, 0x8e, 0x20, 0x0a,
-	0xbb, 0x76, 0x82, 0xda, 0xad, 0x19, 0x0d, 0xb8, 0x47, 0x15, 0xeb, 0xda, 0x11, 0x9b, 0x4c, 0x79,
-	0xc4, 0x3c, 0xdb, 0xd5, 0x06, 0xbb, 0x83, 0x2a, 0x59, 0x48, 0x2c, 0xf1, 0x21, 0x2a, 0xf5, 0x41,
-	0x28, 0x26, 0x54, 0x16, 0x54, 0xfd, 0x5a, 0x36, 0x4b, 0xc3, 0x14, 0x72, 0x73, 0xae, 0xb3, 0x36,
-	0x50, 0xf1, 0x82, 0x85, 0x80, 0x4f, 0x51, 0xf1, 0x86, 0x0b, 0x1f, 0xd7, 0x48, 0xba, 0x28, 0xc9,
-	0x5b, 0x90, 0xcb, 0xa4, 0x85, 0xb9, 0x01, 0xc7, 0xe7, 0xa8, 0x7c, 0x4b, 0xe7, 0xfa, 0x5f, 0xdc,
-	0x20, 0x7f, 0x2e, 0x48, 0xf2, 0x52, 0x1b, 0xed, 0x1e, 0xaa, 0xe6, 0xf6, 0x3b, 0xf7, 0xfa, 0xbf,
-	0x04, 0x73, 0x13, 0x15, 0x4b, 0xdb, 0x7a, 0x7a, 0xfb, 0x7c, 0xde, 0xaa, 0xe3, 0x9a, 0xf3, 0x18,
-	0x51, 0x05, 0x71, 0x3b, 0x91, 0x3a, 0x31, 0x9d, 0x3f, 0x8c, 0x13, 0x4d, 0xaf, 0xb1, 0xf8, 0xb0,
-	0x0a, 0x8b, 0x95, 0x65, 0xbc, 0xae, 0x2c, 0xe3, 0x7d, 0x65, 0x19, 0x2f, 0x6b, 0xab, 0x70, 0xbf,
-	0x4d, 0x25, 0x1f, 0xec, 0xe8, 0x85, 0x4e, 0x7e, 0x02, 0x00, 0x00, 0xff, 0xff, 0x59, 0x9e, 0x74,
-	0x3f, 0x08, 0x02, 0x00, 0x00,
+	// 451 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xcf, 0x6e, 0x13, 0x31,
+	0x10, 0x87, 0xbb, 0x24, 0x6d, 0x88, 0x11, 0x82, 0x5a, 0xa5, 0x5a, 0x16, 0xb4, 0x29, 0x46, 0x45,
+	0x1c, 0xa8, 0x23, 0x8a, 0x04, 0x52, 0x8f, 0x49, 0x41, 0xa0, 0x70, 0x88, 0x56, 0x29, 0x07, 0x6e,
+	0xde, 0xcd, 0x74, 0xb1, 0xb4, 0xbb, 0x76, 0xbd, 0x4e, 0xa4, 0x3c, 0x00, 0xef, 0xc0, 0x23, 0xf5,
+	0xc8, 0x13, 0x54, 0x10, 0x6e, 0x1c, 0xb9, 0x71, 0x43, 0xfe, 0x13, 0x52, 0xd2, 0x20, 0xb8, 0xe5,
+	0x9b, 0xf9, 0xe6, 0xe7, 0xd8, 0xb3, 0xa8, 0xcd, 0x24, 0xa7, 0x52, 0x09, 0x2d, 0xf0, 0xad, 0x31,
+	0x94, 0x82, 0xd6, 0xa0, 0xa6, 0x3c, 0x03, 0x3a, 0x7d, 0x1a, 0x1d, 0xe4, 0x5c, 0x7f, 0x98, 0xa4,
+	0x34, 0x13, 0x65, 0x37, 0x17, 0xb9, 0xe8, 0x5a, 0x2f, 0x9d, 0x9c, 0x5a, 0xb2, 0x60, 0x7f, 0xb9,
+	0xf9, 0xe8, 0x5e, 0x2e, 0x44, 0x5e, 0xc0, 0xd2, 0x82, 0x52, 0xea, 0x99, 0x6f, 0xde, 0xf7, 0x4d,
+	0x26, 0x79, 0x97, 0x55, 0x95, 0xd0, 0x4c, 0x73, 0x51, 0xd5, 0xae, 0x4b, 0xfa, 0xe8, 0xfa, 0x6b,
+	0x28, 0x0a, 0x91, 0xc0, 0x19, 0x7e, 0x81, 0x9a, 0x15, 0x2b, 0x21, 0x0c, 0xf6, 0x82, 0xc7, 0xed,
+	0xde, 0xc3, 0x1f, 0x17, 0x9d, 0xce, 0xa9, 0x50, 0xe5, 0x11, 0x31, 0x55, 0xb2, 0x37, 0x65, 0x05,
+	0x1f, 0x33, 0x0d, 0x47, 0x44, 0xc1, 0xd9, 0x84, 0x2b, 0x18, 0x93, 0xc4, 0x0e, 0x90, 0x43, 0xd4,
+	0xf6, 0x21, 0xb5, 0xc4, 0xfb, 0xa8, 0xd5, 0x17, 0x95, 0x86, 0x4a, 0xfb, 0xa0, 0x1b, 0xdf, 0x2f,
+	0x3a, 0xad, 0xcc, 0x95, 0x92, 0x45, 0x8f, 0x3c, 0x41, 0x3b, 0x23, 0xae, 0x0b, 0xe8, 0x8b, 0x6a,
+	0x0a, 0x4a, 0x8f, 0x7a, 0x03, 0x98, 0x99, 0x3f, 0xb1, 0x83, 0x36, 0x6d, 0xdd, 0x0d, 0x27, 0x0e,
+	0xc8, 0x01, 0xba, 0xb3, 0xc6, 0xae, 0xa5, 0xd5, 0x0d, 0xfc, 0xd6, 0x0d, 0x90, 0x63, 0x74, 0x7b,
+	0x00, 0x33, 0x2f, 0xfb, 0xe0, 0x10, 0xb5, 0x5e, 0x29, 0x51, 0x2e, 0xdd, 0x05, 0xe2, 0x5d, 0xb4,
+	0x75, 0x52, 0x83, 0x7a, 0x73, 0x1c, 0x5e, 0xb3, 0x0d, 0x4f, 0xe4, 0x63, 0x80, 0xb6, 0x57, 0x62,
+	0xfc, 0x89, 0xe2, 0xf2, 0x89, 0x06, 0x4c, 0x75, 0xa8, 0x78, 0x06, 0x3e, 0xc2, 0x81, 0x49, 0x4e,
+	0x20, 0x65, 0x1a, 0xc2, 0x86, 0x4b, 0x76, 0xb4, 0xbc, 0x64, 0xf3, 0xd2, 0x25, 0x8d, 0x3d, 0xe4,
+	0xd9, 0x49, 0xf2, 0x36, 0xdc, 0x74, 0xb6, 0xa3, 0xc3, 0x9f, 0x01, 0x6a, 0x8c, 0x7a, 0x03, 0xfc,
+	0x1c, 0x35, 0x87, 0xbc, 0xca, 0xf1, 0x2e, 0x75, 0x2b, 0xa5, 0x8b, 0x7d, 0xd3, 0x97, 0x66, 0xdf,
+	0xd1, 0x5f, 0xea, 0x38, 0x45, 0xdb, 0x57, 0x1e, 0x0f, 0xef, 0xd3, 0x95, 0x8f, 0x8e, 0xae, 0x5b,
+	0x47, 0xf4, 0xe8, 0x7f, 0xb4, 0x5a, 0xe2, 0x77, 0xe8, 0xe6, 0x1f, 0x4f, 0x85, 0x1f, 0x5c, 0x19,
+	0x5c, 0xdd, 0x48, 0x44, 0xfe, 0xa5, 0xd4, 0xb2, 0x77, 0xf7, 0xfc, 0x6b, 0xbc, 0x71, 0x3e, 0x8f,
+	0x83, 0xcf, 0xf3, 0x38, 0xf8, 0x32, 0x8f, 0x83, 0x4f, 0xdf, 0xe2, 0x8d, 0xf7, 0x0d, 0x26, 0x79,
+	0xba, 0x65, 0xaf, 0xf9, 0xec, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0x50, 0xf1, 0x8c, 0xe1, 0x49,
+	0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -152,144 +328,156 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// DemoClient is the client API for Demo service.
+// TBKClient is the client API for TBK service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type DemoClient interface {
+type TBKClient interface {
 	Ping(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
-	SayHello(ctx context.Context, in *HelloReq, opts ...grpc.CallOption) (*empty.Empty, error)
-	SayHelloURL(ctx context.Context, in *HelloReq, opts ...grpc.CallOption) (*HelloResp, error)
+	//  rpc SayHello(HelloReq) returns (.google.protobuf.Empty);
+	//  rpc SayHelloURL(HelloReq) returns (HelloResp) {
+	//    option (google.api.http) = {
+	//      get: "/kratos-demo/say_hello"
+	//    };
+	//  };
+	TitleConvertTBKey(ctx context.Context, in *TitleConvertTBKeyReq, opts ...grpc.CallOption) (*TitleConvertTBKeyResp, error)
+	KeyConvertKey(ctx context.Context, in *KeyConvertKeyReq, opts ...grpc.CallOption) (*KeyConvertKeyResp, error)
 }
 
-type demoClient struct {
+type tBKClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewDemoClient(cc *grpc.ClientConn) DemoClient {
-	return &demoClient{cc}
+func NewTBKClient(cc *grpc.ClientConn) TBKClient {
+	return &tBKClient{cc}
 }
 
-func (c *demoClient) Ping(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *tBKClient) Ping(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/demo.service.v1.Demo/Ping", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/demo.service.v1.TBK/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *demoClient) SayHello(ctx context.Context, in *HelloReq, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/demo.service.v1.Demo/SayHello", in, out, opts...)
+func (c *tBKClient) TitleConvertTBKey(ctx context.Context, in *TitleConvertTBKeyReq, opts ...grpc.CallOption) (*TitleConvertTBKeyResp, error) {
+	out := new(TitleConvertTBKeyResp)
+	err := c.cc.Invoke(ctx, "/demo.service.v1.TBK/TitleConvertTBKey", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *demoClient) SayHelloURL(ctx context.Context, in *HelloReq, opts ...grpc.CallOption) (*HelloResp, error) {
-	out := new(HelloResp)
-	err := c.cc.Invoke(ctx, "/demo.service.v1.Demo/SayHelloURL", in, out, opts...)
+func (c *tBKClient) KeyConvertKey(ctx context.Context, in *KeyConvertKeyReq, opts ...grpc.CallOption) (*KeyConvertKeyResp, error) {
+	out := new(KeyConvertKeyResp)
+	err := c.cc.Invoke(ctx, "/demo.service.v1.TBK/KeyConvertKey", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// DemoServer is the server API for Demo service.
-type DemoServer interface {
+// TBKServer is the server API for TBK service.
+type TBKServer interface {
 	Ping(context.Context, *empty.Empty) (*empty.Empty, error)
-	SayHello(context.Context, *HelloReq) (*empty.Empty, error)
-	SayHelloURL(context.Context, *HelloReq) (*HelloResp, error)
+	//  rpc SayHello(HelloReq) returns (.google.protobuf.Empty);
+	//  rpc SayHelloURL(HelloReq) returns (HelloResp) {
+	//    option (google.api.http) = {
+	//      get: "/kratos-demo/say_hello"
+	//    };
+	//  };
+	TitleConvertTBKey(context.Context, *TitleConvertTBKeyReq) (*TitleConvertTBKeyResp, error)
+	KeyConvertKey(context.Context, *KeyConvertKeyReq) (*KeyConvertKeyResp, error)
 }
 
-// UnimplementedDemoServer can be embedded to have forward compatible implementations.
-type UnimplementedDemoServer struct {
+// UnimplementedTBKServer can be embedded to have forward compatible implementations.
+type UnimplementedTBKServer struct {
 }
 
-func (*UnimplementedDemoServer) Ping(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
+func (*UnimplementedTBKServer) Ping(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (*UnimplementedDemoServer) SayHello(ctx context.Context, req *HelloReq) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
+func (*UnimplementedTBKServer) TitleConvertTBKey(ctx context.Context, req *TitleConvertTBKeyReq) (*TitleConvertTBKeyResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TitleConvertTBKey not implemented")
 }
-func (*UnimplementedDemoServer) SayHelloURL(ctx context.Context, req *HelloReq) (*HelloResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SayHelloURL not implemented")
-}
-
-func RegisterDemoServer(s *grpc.Server, srv DemoServer) {
-	s.RegisterService(&_Demo_serviceDesc, srv)
+func (*UnimplementedTBKServer) KeyConvertKey(ctx context.Context, req *KeyConvertKeyReq) (*KeyConvertKeyResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method KeyConvertKey not implemented")
 }
 
-func _Demo_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func RegisterTBKServer(s *grpc.Server, srv TBKServer) {
+	s.RegisterService(&_TBK_serviceDesc, srv)
+}
+
+func _TBK_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DemoServer).Ping(ctx, in)
+		return srv.(TBKServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/demo.service.v1.Demo/Ping",
+		FullMethod: "/demo.service.v1.TBK/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DemoServer).Ping(ctx, req.(*empty.Empty))
+		return srv.(TBKServer).Ping(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Demo_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HelloReq)
+func _TBK_TitleConvertTBKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TitleConvertTBKeyReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DemoServer).SayHello(ctx, in)
+		return srv.(TBKServer).TitleConvertTBKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/demo.service.v1.Demo/SayHello",
+		FullMethod: "/demo.service.v1.TBK/TitleConvertTBKey",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DemoServer).SayHello(ctx, req.(*HelloReq))
+		return srv.(TBKServer).TitleConvertTBKey(ctx, req.(*TitleConvertTBKeyReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Demo_SayHelloURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HelloReq)
+func _TBK_KeyConvertKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KeyConvertKeyReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DemoServer).SayHelloURL(ctx, in)
+		return srv.(TBKServer).KeyConvertKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/demo.service.v1.Demo/SayHelloURL",
+		FullMethod: "/demo.service.v1.TBK/KeyConvertKey",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DemoServer).SayHelloURL(ctx, req.(*HelloReq))
+		return srv.(TBKServer).KeyConvertKey(ctx, req.(*KeyConvertKeyReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Demo_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "demo.service.v1.Demo",
-	HandlerType: (*DemoServer)(nil),
+var _TBK_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "demo.service.v1.TBK",
+	HandlerType: (*TBKServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Ping",
-			Handler:    _Demo_Ping_Handler,
+			Handler:    _TBK_Ping_Handler,
 		},
 		{
-			MethodName: "SayHello",
-			Handler:    _Demo_SayHello_Handler,
+			MethodName: "TitleConvertTBKey",
+			Handler:    _TBK_TitleConvertTBKey_Handler,
 		},
 		{
-			MethodName: "SayHelloURL",
-			Handler:    _Demo_SayHelloURL_Handler,
+			MethodName: "KeyConvertKey",
+			Handler:    _TBK_KeyConvertKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -364,6 +552,177 @@ func (m *HelloResp) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *TitleConvertTBKeyReq) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TitleConvertTBKeyReq) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TitleConvertTBKeyReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.Title)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TitleConvertTBKeyResp) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TitleConvertTBKeyResp) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TitleConvertTBKeyResp) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.TBKey) > 0 {
+		i -= len(m.TBKey)
+		copy(dAtA[i:], m.TBKey)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.TBKey)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *KeyConvertKeyReq) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeyConvertKeyReq) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeyConvertKeyReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.UserID) > 0 {
+		i -= len(m.UserID)
+		copy(dAtA[i:], m.UserID)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.UserID)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.FromKey) > 0 {
+		i -= len(m.FromKey)
+		copy(dAtA[i:], m.FromKey)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.FromKey)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *KeyConvertKeyResp) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeyConvertKeyResp) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeyConvertKeyResp) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.PicURL) > 0 {
+		i -= len(m.PicURL)
+		copy(dAtA[i:], m.PicURL)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.PicURL)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.Title)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Rebate) > 0 {
+		i -= len(m.Rebate)
+		copy(dAtA[i:], m.Rebate)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.Rebate)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Price) > 0 {
+		i -= len(m.Price)
+		copy(dAtA[i:], m.Price)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.Price)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ToKey) > 0 {
+		i -= len(m.ToKey)
+		copy(dAtA[i:], m.ToKey)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.ToKey)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintApi(dAtA []byte, offset int, v uint64) int {
 	offset -= sovApi(v)
 	base := offset
@@ -398,6 +757,90 @@ func (m *HelloResp) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.Content)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TitleConvertTBKeyReq) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Title)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TitleConvertTBKeyResp) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.TBKey)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *KeyConvertKeyReq) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.FromKey)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.UserID)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *KeyConvertKeyResp) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ToKey)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.Price)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.Rebate)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.Title)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.PicURL)
 	if l > 0 {
 		n += 1 + l + sovApi(uint64(l))
 	}
@@ -559,6 +1002,510 @@ func (m *HelloResp) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Content = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TitleConvertTBKeyReq) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TitleConvertTBKeyReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TitleConvertTBKeyReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Title = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TitleConvertTBKeyResp) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TitleConvertTBKeyResp: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TitleConvertTBKeyResp: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TBKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TBKey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeyConvertKeyReq) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeyConvertKeyReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeyConvertKeyReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FromKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FromKey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UserID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UserID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeyConvertKeyResp) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeyConvertKeyResp: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeyConvertKeyResp: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ToKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ToKey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Price", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Price = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rebate", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Rebate = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Title = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PicURL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PicURL = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

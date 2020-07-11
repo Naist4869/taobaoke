@@ -1,0 +1,10 @@
+[Logger]
+      maxSize= 500
+      maxAge= 30
+      logDir= "logs"
+      name= "taobaoke"
+      debug= true
+      console= true
+[Logger.level]
+      main=-1
+      dao=-1

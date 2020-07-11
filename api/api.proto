@@ -15,14 +15,16 @@ package demo.service.v1;
 option go_package = "api";
 option (gogoproto.goproto_getters_all) = false;
 
-service Demo {
+service TBK {
   rpc Ping(.google.protobuf.Empty) returns (.google.protobuf.Empty);
-  rpc SayHello(HelloReq) returns (.google.protobuf.Empty);
-  rpc SayHelloURL(HelloReq) returns (HelloResp) {
-    option (google.api.http) = {
-      get: "/kratos-demo/say_hello"
-    };
-  };
+//  rpc SayHello(HelloReq) returns (.google.protobuf.Empty);
+//  rpc SayHelloURL(HelloReq) returns (HelloResp) {
+//    option (google.api.http) = {
+//      get: "/kratos-demo/say_hello"
+//    };
+//  };
+  rpc TitleConvertTBKey(TitleConvertTBKeyReq) returns(TitleConvertTBKeyResp);
+  rpc KeyConvertKey(KeyConvertKeyReq) returns(KeyConvertKeyResp);
 }
 
 message HelloReq {
@@ -31,4 +33,22 @@ message HelloReq {
 
 message HelloResp {
   string Content = 1 [(gogoproto.jsontag) = 'content'];
+}
+
+message TitleConvertTBKeyReq{
+  string Title =1;
+}
+message TitleConvertTBKeyResp{
+  string TBKey = 1;
+}
+message KeyConvertKeyReq{
+  string FromKey = 1 ;
+  string UserID = 2 ;
+}
+message KeyConvertKeyResp{
+  string ToKey =1 ;
+  string Price=2;
+  string Rebate =3;
+  string Title=4;
+  string PicURL=5;
 }

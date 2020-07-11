@@ -1,3 +1,15 @@
-[Server]
-    addr = "0.0.0.0:8000"
-    timeout = "1s"
+[bm]
+    [bm.server]
+        addr = "0.0.0.0:1241"
+        timeout = "1s"
+    [bm.client]
+        dial = "1000ms"
+        timeout = "30s"
+        keepAlive = "60s"
+        timer = 10
+    [bm.client.breaker]
+        window  = "3s"
+        sleep   = "1000ms"
+        bucket  = 10
+        ratio   = 0.5
+        request = 100

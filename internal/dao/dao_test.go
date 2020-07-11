@@ -4,7 +4,10 @@ import (
 	"context"
 	"flag"
 	"os"
+	"taobaoke/internal/model"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/go-kratos/kratos/pkg/conf/paladin"
 	"github.com/go-kratos/kratos/pkg/testing/lich"
@@ -28,7 +31,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	var cf func()
-	if d, cf, err = newTestDao();err != nil {
+	if d, cf, err = newTestDao(); err != nil {
 		panic(err)
 	}
 	ret := m.Run()
@@ -37,4 +40,8 @@ func TestMain(m *testing.M) {
 		_ = lich.Teardown()
 	}
 	os.Exit(ret)
+}
+func TestOrderClient_Insert(t *testing.T) {
+	err := d.Insert(ctx, model.NewOrder("123", "123"))
+	require.NoError(t, err)
 }

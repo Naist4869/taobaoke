@@ -15,30 +15,70 @@ import (
 // Injectors from wire.go:
 
 func InitApp() (*App, func(), error) {
-	redis, cleanup, err := dao.NewRedis()
+	logger, cleanup, err := service.NewLogger()
 	if err != nil {
 		return nil, nil, err
 	}
-	memcache, cleanup2, err := dao.NewMC()
+	redis, cleanup2, err := dao.NewRedis()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	db, cleanup3, err := dao.NewDB()
+	memcache, cleanup3, err := dao.NewMC()
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	daoDao, cleanup4, err := dao.New(redis, memcache, db)
+	db, cleanup4, err := dao.NewDB()
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	serviceService, cleanup5, err := service.New(daoDao)
+	client, cleanup5, err := dao.NewMongo()
 	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	orderClient, err := dao.NewOrderClient(client, logger)
+	if err != nil {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	daoDao, cleanup6, err := dao.New(logger, redis, memcache, db, client, orderClient)
+	if err != nil {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	blademasterClient, cleanup7, err := service.NewBmClient()
+	if err != nil {
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	orders := service.NewOrders(logger)
+	serviceService, cleanup8, err := service.New(daoDao, logger, blademasterClient, orders)
+	if err != nil {
+		cleanup7()
+		cleanup6()
+		cleanup5()
 		cleanup4()
 		cleanup3()
 		cleanup2()
@@ -47,6 +87,9 @@ func InitApp() (*App, func(), error) {
 	}
 	engine, err := http.New(serviceService)
 	if err != nil {
+		cleanup8()
+		cleanup7()
+		cleanup6()
 		cleanup5()
 		cleanup4()
 		cleanup3()
@@ -56,6 +99,9 @@ func InitApp() (*App, func(), error) {
 	}
 	server, err := grpc.New(serviceService)
 	if err != nil {
+		cleanup8()
+		cleanup7()
+		cleanup6()
 		cleanup5()
 		cleanup4()
 		cleanup3()
@@ -63,8 +109,11 @@ func InitApp() (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	app, cleanup6, err := NewApp(serviceService, engine, server)
+	app, cleanup9, err := NewApp(serviceService, engine, server)
 	if err != nil {
+		cleanup8()
+		cleanup7()
+		cleanup6()
 		cleanup5()
 		cleanup4()
 		cleanup3()
@@ -73,6 +122,9 @@ func InitApp() (*App, func(), error) {
 		return nil, nil, err
 	}
 	return app, func() {
+		cleanup9()
+		cleanup8()
+		cleanup7()
 		cleanup6()
 		cleanup5()
 		cleanup4()

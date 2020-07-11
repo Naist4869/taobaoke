@@ -11,7 +11,7 @@ import (
 func NewRedis() (r *redis.Redis, cf func(), err error) {
 	var (
 		cfg redis.Config
-		ct paladin.Map
+		ct  paladin.Map
 	)
 	if err = paladin.Get("redis.toml").Unmarshal(&ct); err != nil {
 		return
@@ -20,7 +20,7 @@ func NewRedis() (r *redis.Redis, cf func(), err error) {
 		return
 	}
 	r = redis.NewRedis(&cfg)
-	cf = func(){r.Close()}
+	cf = func() { r.Close() }
 	return
 }
 

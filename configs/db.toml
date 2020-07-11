@@ -8,3 +8,9 @@
 	queryTimeout = "200ms"
 	execTimeout = "300ms"
 	tranTimeout = "400ms"
+[Mongo]
+    host = "localhost"
+    port = "27018"
+    user = "my_user"
+    pass = "password123"
+    db = "taobaoke"

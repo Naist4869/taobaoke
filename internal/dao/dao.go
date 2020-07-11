@@ -4,7 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/Naist4869/log"
+
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"taobaoke/internal/model"
+
 	"github.com/go-kratos/kratos/pkg/cache/memcache"
 	"github.com/go-kratos/kratos/pkg/cache/redis"
 	"github.com/go-kratos/kratos/pkg/conf/paladin"
@@ -15,7 +20,7 @@ import (
 	"github.com/google/wire"
 )
 
-var Provider = wire.NewSet(New, NewDB, NewRedis, NewMC)
+var Provider = wire.NewSet(New, NewDB, NewRedis, NewMC, NewMongo, NewOrderClient)
 
 //go:generate kratos tool genbts
 // Dao dao interface
@@ -24,6 +29,7 @@ type Dao interface {
 	Ping(ctx context.Context) (err error)
 	// bts: -nullcache=&model.Article{ID:-1} -check_null_code=$!=nil&&$.ID==-1
 	Article(c context.Context, id int64) (*model.Article, error)
+	OrderDataService
 }
 
 // dao dao.
@@ -31,28 +37,42 @@ type dao struct {
 	db          *sql.DB
 	redis       *redis.Redis
 	mc          *memcache.Memcache
-	cache *fanout.Fanout
-	demoExpire int32
+	mongo       *mongo.Client
+	orderClient *OrderClient
+	cache       *fanout.Fanout
+	logger      *log.Logger
+	demoExpire  int32
+}
+
+func (d *dao) Insert(ctx context.Context, o *model.Order) (err error) {
+	return d.orderClient.Insert(ctx, o)
+}
+
+func (d *dao) FindOrderByID(ctx context.Context, id string) (order *model.Order, err error) {
+	return d.orderClient.FindOrderByID(ctx, id)
 }
 
 // New new a dao and return.
-func New(r *redis.Redis, mc *memcache.Memcache, db *sql.DB) (d Dao, cf func(), err error) {
-	return newDao(r, mc, db)
+func New(logger *log.Logger, r *redis.Redis, mc *memcache.Memcache, db *sql.DB, mongo *mongo.Client, orderClient *OrderClient) (d Dao, cf func(), err error) {
+	return newDao(logger, r, mc, db, mongo, orderClient)
 }
 
-func newDao(r *redis.Redis, mc *memcache.Memcache, db *sql.DB) (d *dao, cf func(), err error) {
-	var cfg struct{
+func newDao(logger *log.Logger, r *redis.Redis, mc *memcache.Memcache, db *sql.DB, mongo *mongo.Client, orderClient *OrderClient) (d *dao, cf func(), err error) {
+	var cfg struct {
 		DemoExpire xtime.Duration
 	}
 	if err = paladin.Get("application.toml").UnmarshalTOML(&cfg); err != nil {
 		return
 	}
 	d = &dao{
-		db: db,
-		redis: r,
-		mc: mc,
-		cache: fanout.New("cache"),
-		demoExpire: int32(time.Duration(cfg.DemoExpire) / time.Second),
+		db:          db,
+		redis:       r,
+		mc:          mc,
+		mongo:       mongo,
+		orderClient: orderClient,
+		cache:       fanout.New("cache"),
+		logger:      logger,
+		demoExpire:  int32(time.Duration(cfg.DemoExpire) / time.Second),
 	}
 	cf = d.Close
 	return
@@ -65,5 +85,5 @@ func (d *dao) Close() {
 
 // Ping ping the resource.
 func (d *dao) Ping(ctx context.Context) (err error) {
-	return nil
+	return d.mongo.Ping(ctx, nil)
 }

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>商品详情</title>
+    <link rel="stylesheet" href="{{- .ngrok -}}/css/item.css">
+</head>
+<body>
+
+<div class="dp-img" style="margin-top: 1px;"><img src="{{.picURL}}"></div>
+<div class="dp-desc "><p class="title">{{.title}}</p> <p class="original-price txt-del">
+
+        ￥{{.trendInfo.CurrentPrice}}
+    </p> <div class="price"><span class="price1">￥{{.trendInfo.OriginalPrice}}</span> <!----> <!----> <!----> <span class="site"><img src="https://cdn.gwdang.com/images/favicon/83.png" class="site-icon"> <span class="site-name">{{.shopName}}</span></span></div> <!----> <!----></div>    <div class="dp-trend"><div class="trend-head"><div class="status"><span class="icon icon-steady"></span> <span class="txt">
+        {{.trendInfo.TrendMsg}}
+    </span></div></div> <div class="maxmin"><div class="max">最高: ￥<span class="price-max">{{.trendInfo.MaxPrice}}</span></div> <div class="min">最低: ￥<span class="price-min">{{.trendInfo.MinPrice}}</span></div></div> <div id="trend" class="trend "><canvas id="canvas_trend" style="width: 100%; height: 300px;"></canvas></div></div>
+<div class="bottom">
+    <div class="clip-btn" onclick="buy()" >
+        <div class="buy">去购买</div>
+    </div>
+</div>
+
+<script src="{{- .ngrok -}}/js/jquery-3.5.1.min.js"></script>
+<script src="{{- .ngrok -}}/js/clipboard.js"></script>
+<script src="{{- .ngrok -}}/js/draw_trend.js"></script>
+<script type="text/javascript">
+    function buy(){
+        let t, e, n, r;
+        t = $(".buy"),
+            t.addClass("btn-copy-bg"),
+            r = e = "",
+            n = {{.tkl}},
+            r =  "已复制淘口令, 打开"+ "<span class='yellow'>" + "【手机淘宝】" + "</span>购买",
+            e = "正在复制淘口令…",
+            t.html(e),
+            clipboard = new ClipboardJS(".clip-btn",{
+                text: function() {
+                    return n
+                }
+            }),
+            setTimeout(function() {
+                $(".buy").html(r)
+            }, 500)
+    }
+    var arr = JSON.parse('{{- .trendInfo.RawJsonTrend -}}')
+    init({{.trendInfo.Period}},arr,"canvas_trend")
+</script>
+</body>
+</html>

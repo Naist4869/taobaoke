@@ -51,4 +51,5 @@ message KeyConvertKeyResp{
   string Rebate =3;
   string Title=4;
   string PicURL=5;
+  string ItemURL=6;
 }

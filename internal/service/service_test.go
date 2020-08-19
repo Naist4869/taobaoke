@@ -96,7 +96,7 @@ func TestMain(m *testing.M) {
 
 func TestService_ItemInfoGet(t *testing.T) {
 	result, err := testService.execTbkItemInfoGet(ctx, TbkItemInfoGetReq{
-		NumIDs: "608813238220",
+		NumIDs: "603587505846",
 	})
 	require.NoError(t, err)
 	spew.Dump(result)
@@ -110,12 +110,7 @@ func TestService_TbkTpwdCreate(t *testing.T) {
 	spew.Dump(result)
 }
 func TestService_TbkDgMaterialOptional(t *testing.T) {
-	var adzoneID int64
-	if id, err := testService.ac.Get("adzoneID").Int64(); err != nil {
-		t.Fatal(err)
-	} else {
-		adzoneID = id
-	}
+	adzoneID := testService.GetadzoneID()
 	testService.execTbkDgMaterialOptional(ctx, TbkDgMaterialOptionalReq{
 		AdzoneId: int(adzoneID),
 		Q:        "华为5G CPE Pro 无线路由器千兆端口双宽带插卡5G全网通随身WiFi\n",
@@ -182,7 +177,7 @@ func TestService_QueryOrder(t *testing.T) {
 }
 
 func TestService_analyzingKey(t *testing.T) {
-	resp, err := testService.analyzingKey(ctx, "￥ZW861w2l4j6￥")
+	resp, err := testService.analyzingKey(ctx, "$nniWccD1nru$")
 	require.NoError(t, err)
 	spew.Dump(resp)
 
@@ -195,7 +190,7 @@ func TestService_ConvertMyKey(t *testing.T) {
 }
 func TestService_KeyConvertKey(t *testing.T) {
 	convertKey, err := testService.KeyConvertKey(ctx, &pb.KeyConvertKeyReq{
-		FromKey: `€l99j1wskwpd€`,
+		FromKey: `$nniWccD1nru$`,
 		UserID:  "1",
 	})
 	require.NoError(t, err)

@@ -2,10 +2,8 @@
 
 package service
 
-import context "context"
-
 // execTbkItemInfoGet 淘宝客商品详情查询（简版）
-func (s *Service) execTbkItemInfoGet(ctx context.Context, req TbkItemInfoGetReq) (result []TbkItemInfoGetResult, err error) {
+func (s *Service) execTbkItemInfoGet(ctx Context, req TbkItemInfoGetReq) (result []TbkItemInfoGetResult, err error) {
 	var resp tbkitemInfoGetResp
 	if err = s.methodPost(ctx, req, &resp, "taobao.tbk.item.info.get"); err != nil {
 		return
@@ -15,7 +13,7 @@ func (s *Service) execTbkItemInfoGet(ctx context.Context, req TbkItemInfoGetReq)
 }
 
 // execTbkTpwdCreate 提供淘客生成淘口令接口，淘客提交口令内容、logo、url等参数，生成淘口令关键key如：￥SADadW￥，后续进行文案包装组装用于传播
-func (s *Service) execTbkTpwdCreate(ctx context.Context, req TbkTpwdCreateReq) (result TbkTpwdCreateResult, err error) {
+func (s *Service) execTbkTpwdCreate(ctx Context, req TbkTpwdCreateReq) (result TbkTpwdCreateResult, err error) {
 	var resp tbkTpwdCreateResp
 	if err = s.methodPost(ctx, req, &resp, "taobao.tbk.tpwd.create"); err != nil {
 		return
@@ -25,7 +23,7 @@ func (s *Service) execTbkTpwdCreate(ctx context.Context, req TbkTpwdCreateReq) (
 }
 
 // execTbkDgMaterialOptional 通用物料搜索API（导购）
-func (s *Service) execTbkDgMaterialOptional(ctx context.Context, req TbkDgMaterialOptionalReq) (result []TbkDgMaterialOptionalResult, err error) {
+func (s *Service) execTbkDgMaterialOptional(ctx Context, req TbkDgMaterialOptionalReq) (result []TbkDgMaterialOptionalResult, err error) {
 	var resp tbkDgMaterialOptionalResp
 	if err = s.methodPost(ctx, req, &resp, "taobao.tbk.dg.material.optional"); err != nil {
 		return
@@ -35,7 +33,7 @@ func (s *Service) execTbkDgMaterialOptional(ctx context.Context, req TbkDgMateri
 }
 
 // execTbkOrderDetailsGet 淘宝客-推广者-所有订单查询
-func (s *Service) execTbkOrderDetailsGet(ctx context.Context, req TbkOrderDetailsGetReq) (result []TbkOrderDetailsGetResult, err error) {
+func (s *Service) execTbkOrderDetailsGet(ctx Context, req TbkOrderDetailsGetReq) (result []TbkOrderDetailsGetResult, err error) {
 	var resp tbkOrderDetailsGetResp
 	if err = s.methodPost(ctx, req, &resp, "taobao.tbk.order.details.get"); err != nil {
 		return

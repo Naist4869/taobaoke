@@ -1,5 +1,9 @@
 package service
 
+import "context"
+
+type Context = context.Context
+
 const (
 	itemInfoGetCode           = 11 // 淘宝客商品详情查询（简版）
 	tbkTpwdCreateCode         = 12 //淘宝客-公用-淘口令生成

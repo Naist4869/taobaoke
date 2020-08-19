@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -16,6 +17,8 @@ import (
 	"taobaoke/internal/model"
 	"time"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
+
 	"github.com/teris-io/shortid"
 
 	"go.uber.org/zap"
@@ -23,8 +26,6 @@ import (
 	"github.com/Naist4869/log"
 
 	"github.com/extrame/xls"
-
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
 
 	bm "github.com/go-kratos/kratos/pkg/net/http/blademaster"
 
@@ -39,6 +40,7 @@ import (
 
 //go:generate kratos tool wire
 var Provider = wire.NewSet(New, wire.Bind(new(pb.TBKServer), new(*Service)), NewLogger, NewBmClient, NewOrders)
+var Ngrok = "http://4372129e86a4.ap.ngrok.io"
 
 // Service service.
 type Service struct {
@@ -50,24 +52,35 @@ type Service struct {
 	idGenerator common.IDGenerator
 }
 
+func (s *Service) GetItem(itemID string) {
+	panic("implement me")
+}
+func (s *Service) GetAppSecret() string {
+	return paladin.String(s.ac.Get("appSecret"), "")
+}
 func (s *Service) KeyConvertKey(ctx context.Context, req *pb.KeyConvertKeyReq) (resp *pb.KeyConvertKeyResp, err error) {
-	var id, key string
-	id, err = s.idGenerator.Generate()
+	id, err := s.idGenerator.Generate()
 	if err != nil {
 		return
 	}
-	c := context.WithValue(ctx, "order", model.NewOrder(id, req.UserID))
-	key, err = s.keyConvertKey(c, req.FromKey)
+
+	r, err := s.keyConvertKey(ctx, req.FromKey)
 	if err != nil {
 		return
 	}
-	order := c.Value("order").(*model.Order)
+	order := model.NewOrder(id, req.UserID, r.AdzoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType, r.Price, r.ReservePrice, r.Rebate, r.URL, r.CouponShareURL, r.Key)
+	trendInfo, err := s.PriceTrend(ctx, strconv.FormatInt(order.ItemID, 10))
+	if err != nil {
+		return
+	}
+	order.TrendInfo = trendInfo
 	resp = &pb.KeyConvertKeyResp{
-		ToKey:  key,
-		Price:  strconv.FormatInt(order.Price, 10),
-		Rebate: strconv.FormatInt(order.Rebate, 10),
-		Title:  order.Title,
-		PicURL: order.PicURL,
+		ToKey:   order.Key,
+		Price:   Separate(strconv.FormatInt(order.Price, 10)),
+		Rebate:  Separate(strconv.FormatInt(order.Rebate, 10)),
+		Title:   order.Title,
+		PicURL:  order.PicURL,
+		ItemURL: Ngrok + "/item/" + strconv.FormatInt(order.ItemID, 10),
 	}
 	s.logger.Info("保存订单信息", zap.String("标题", order.Title), zap.Int64("商品ID", order.ItemID), zap.Int64("价格", order.Price), zap.String("淘口令", order.Key))
 	return
@@ -149,17 +162,16 @@ func (s *Service) Ping(ctx context.Context, e *empty.Empty) (*empty.Empty, error
 func (s *Service) Close() {
 }
 
+func (s *Service) GetURI() string {
+	return paladin.String(s.ac.Get("uri"), "http://gw.api.taobao.com/router/rest")
+}
+func (s *Service) GetAppKey() string {
+	return paladin.String(s.ac.Get("appKey"), "")
+}
 func (s *Service) methodPost(ctx context.Context, req Request, resp Response, method string) (err error) {
-	var uri, appKey string
-	uri, err = s.ac.Get("uri").String()
-	if err != nil {
-		return
-	}
+	uri := s.GetURI()
+	appKey := s.GetAppKey()
 	query := url.Values{}
-	appKey, err = s.ac.Get("appKey").String()
-	if err != nil {
-		return
-	}
 	queryMap := map[string]string{
 		"method":      method,
 		"app_key":     appKey,
@@ -176,7 +188,7 @@ func (s *Service) methodPost(ctx context.Context, req Request, resp Response, me
 		param = append(param, key+value)
 	}
 
-	sign := Sign(param...)
+	sign := s.Sign(param...)
 	query.Set("sign", sign)
 	if err = s.client.Post(ctx, uri, "", query, resp); err != nil {
 		return
@@ -187,113 +199,201 @@ func (s *Service) methodPost(ctx context.Context, req Request, resp Response, me
 	return
 }
 
-// 淘口令转高佣淘口令
-func (s *Service) keyConvertKey(ctx context.Context, fromKey string) (string, error) {
-	var Title, PicURL string
-	if keyInfo, err := s.analyzingKey(ctx, fromKey); err != nil {
-		return "", err
-	} else {
-		Title = keyInfo.Content
-		PicURL = keyInfo.PicURL
+// 获取历史价格趋势
+func (s *Service) PriceTrend(ctx context.Context, itemID string) (trendInfo model.TrendInfo, err error) {
+	price_trend_uri := "https://m.gwdang.com/trend/data_new"
+	query := url.Values{}
+	query.Add("opt", "trend")
+	query.Add("dp_id", itemID+"-83")
+	query.Add("from", "m")
+	query.Add("period", "180")
+	query.Add("is_coupon", "0")
+	//query.Add("price")
+	//query.Add("org_price","0")
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s?%s", price_trend_uri, query.Encode()), nil)
+	if err != nil {
+		err = fmt.Errorf("priceTrend创建请求: %w", err)
+		return
 	}
-	if key, err := s.convertMyKey(ctx, Title, PicURL); err != nil {
-		return "", err
-	} else {
-		return key, err
+	request.Header.Set("user-agent", "Mozilla/5.0 (Linux; Android 5.0; SM-N9100 Build/LRX21V) > AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 > Chrome/37.0.0.0 Mobile Safari/537.36 > MicroMessenger/6.0.2.56_r958800.520 NetType/WIFI")
+	resp := &model.PriceTrendResp{}
+	if err = s.client.JSON(ctx, request, resp); err != nil {
+		err = fmt.Errorf("priceTrend返回响应: %w", err)
+		return
 	}
-
+	if resp.Code != 0 || len(resp.Data.Series) == 0 {
+		err = fmt.Errorf("priceTrend解析响应: %w", err)
+		return
+	}
+	marshal, err := json.Marshal(resp.Data.Series[0].Data)
+	if err != nil {
+		err = fmt.Errorf("priceTrend把价格趋势JsonArray转化为Raw失败: %w", err)
+		return
+	}
+	trendInfo.RawJsonTrend = string(marshal)
+	trendInfo.CurrentPrice = Separate(strconv.Itoa(resp.Data.Series[0].Current))
+	trendInfo.MaxPrice = Separate(strconv.Itoa(resp.Data.Series[0].Max))
+	trendInfo.MinPrice = Separate(strconv.Itoa(resp.Data.Series[0].Min))
+	trendInfo.OriginalPrice = Separate(strconv.Itoa(resp.Data.Series[0].Original))
+	trendInfo.Period = resp.Data.Series[0].Period
+	switch resp.Data.Series[0].Trend {
+	case -1:
+		trendInfo.TrendMsg = "价格下降"
+	case 1:
+		trendInfo.TrendMsg = "价格上涨"
+	case 0:
+		trendInfo.TrendMsg = "价格平稳"
+	case -2:
+		trendInfo.TrendMsg = "历史最低"
+	}
+	return
+}
+func Separate(number string) string {
+	integerPart, decimalPart := separate(number)
+	return integerPart + "." + decimalPart
+}
+func separate(number string) (integerPart string, decimalPart string) {
+	switch len(number) {
+	case 0:
+		decimalPart = "00"
+		integerPart = "0"
+	case 1:
+		decimalPart = "0" + number
+		integerPart = "0"
+	case 2:
+		decimalPart = number
+		integerPart = "0"
+	default:
+		integerPart = number[:len(number)-2]
+		decimalPart = number[len(number)-2:]
+	}
+	return
 }
 
-func (s *Service) convertMyKey(ctx context.Context, title, picUrl string) (string, error) {
-	order := ctx.Value("order").(*model.Order)
-	var adzoneID int64
-	if id, err := s.ac.Get("adzoneID").Int64(); err != nil {
-		return "", err
-	} else {
-		adzoneID = id
-	}
+type keyConvertKeyResult struct {
+	convertMyKeyResult
+	ValidDate string
+}
 
-	result, err := s.execTbkDgMaterialOptional(ctx, TbkDgMaterialOptionalReq{
+// 淘口令转高佣淘口令
+func (s *Service) keyConvertKey(ctx context.Context, fromKey string) (result keyConvertKeyResult, err error) {
+	keyInfo, err := s.analyzingKey(ctx, fromKey)
+	if err != nil {
+		return
+	}
+	title := keyInfo.Content
+	picURL := keyInfo.PicURL
+	convertMyKeyInfo, err := s.convertMyKey(ctx, title, picURL)
+	if err != nil {
+		return
+	}
+	result.convertMyKeyResult = convertMyKeyInfo
+	result.ValidDate = keyInfo.ValidDate
+	return
+}
+
+type convertMyKeyResult struct {
+	AdzoneID       int64
+	Title          string
+	ItemID         int64
+	PicURL         string
+	ShopName       string
+	ShopType       int
+	Price          int64
+	Rebate         int64
+	URL            string
+	CouponShareURL string
+	Key            string
+	ReservePrice   int64
+}
+
+func (s *Service) convertMyKey(ctx context.Context, title, picUrl string) (result convertMyKeyResult, err error) {
+	id := s.GetadzoneID()
+	adzoneID := id
+	materialResult, err := s.execTbkDgMaterialOptional(ctx, TbkDgMaterialOptionalReq{
 		AdzoneId: int(adzoneID),
 		Q:        title,
 		Sort:     "total_sales_des",
 	})
 	if err != nil {
-		return "", err
+		return
 	}
-	order.AdzoneID = adzoneID
-	if len(result) == 0 {
-		return "", errors.New("搜索列表为空")
+	result.AdzoneID = adzoneID
+	if len(materialResult) == 0 {
+		err = errors.New("搜索列表为空")
+		return
 	}
-	for _, item := range result {
+
+	for _, item := range materialResult {
 		index := strings.Index(item.PictURL, "uploaded")
 		if !strings.Contains(picUrl, item.PictURL[index+12:]) {
 			continue
 		}
 		var (
-			URL            string
-			price          float64
-			commissionRate int64 = 1
+			URL                 string
+			commissionRate      int64 = 1
+			price, reservePrice float64
+			highCommissionInfo  HighCommissionResult
+			parseUrl            *url.URL
+			tpwdCreateResult    TbkTpwdCreateResult
 		)
-		order.Title = item.Title
-		order.ItemID = item.NumIid // 文档里说要废弃
+		result.Title = item.Title
+		result.ItemID = item.NumIid // 文档里说要废弃
 
 		s.logger.Info("商品信息", zap.String("标题", item.Title), zap.Int64("商品ID", item.NumIid), zap.String("一口价", item.ReservePrice), zap.String("折扣价", item.ZkFinalPrice), zap.String("佣金比率", item.CommissionRate))
-		if p, err := strconv.ParseFloat(item.ZkFinalPrice, 64); err != nil {
+		if price, err = strconv.ParseFloat(item.ZkFinalPrice, 64); err != nil {
 			s.logger.Error("convertMyKey", zap.Error(err), zap.String("折扣价", item.ZkFinalPrice))
-			if p, err := strconv.ParseFloat(item.ReservePrice, 64); err != nil {
-				s.logger.Error("convertMyKey", zap.Error(err), zap.String("一口价", item.ReservePrice))
-			} else {
-				price = p
-			}
-		} else {
-			price = p
 		}
-		if p, err := strconv.ParseInt(item.CommissionRate, 10, 64); err != nil {
+		if reservePrice, err = strconv.ParseFloat(item.ReservePrice, 64); err != nil {
+			s.logger.Error("convertMyKey", zap.Error(err), zap.String("一口价", item.ReservePrice))
+		}
+		commissionRate, err = strconv.ParseInt(item.CommissionRate, 10, 64)
+		if err != nil {
 			s.logger.Error("convertMyKey", zap.Error(err), zap.String("佣金比率", item.CommissionRate))
-		} else {
-			commissionRate = p
 		}
-		order.PicURL = item.PictURL
-		order.Price = int64(price * 100)
-		order.Rebate = int64(price*float64(commissionRate)) / 100
-		if highCommissionInfo, err := s.HighCommission(ctx, item.NumIid); err != nil {
-			s.logger.Error("convertMyKey 转换高佣失败", zap.Error(err), zap.Int64("itemID", item.NumIid))
-			order.URL = item.URL
-			order.CouponShareURL = item.CouponShareURL
-			if item.CouponShareURL != "" {
-				URL = item.CouponShareURL
-			} else {
-				URL = item.URL
-			}
+		result.ShopName = item.Nick
+		result.PicURL = item.PictURL
+		result.ShopType = item.UserType
+		result.ReservePrice = int64(reservePrice * 100)
+		result.Price = int64(price * 100)
+		result.Rebate = int64(price*float64(commissionRate)) / 100
+		result.URL = item.URL
+		result.CouponShareURL = item.CouponShareURL
+		if item.CouponShareURL != "" {
+			URL = item.CouponShareURL
 		} else {
-			order.URL = highCommissionInfo.ItemURL
-			order.CouponShareURL = highCommissionInfo.CouponClickURL
+			URL = item.URL
+		}
+
+		highCommissionInfo, err = s.HighCommission(ctx, item.NumIid)
+		if err == nil {
+			result.URL = highCommissionInfo.ItemURL
+			result.CouponShareURL = highCommissionInfo.CouponClickURL
+			//通知！通知！接到官方小二通知，非淘客链接不在支持生成淘口令，如果有需要请自己使用千牛App中的淘外推广进行创建口令
 			if item.CouponShareURL != "" {
 				URL = highCommissionInfo.CouponClickURL
 			} else {
 				URL = highCommissionInfo.ItemURL
 			}
 		}
-
-		if parseUrl, err := url.Parse(URL); err != nil {
-			return "", err
-		} else {
-			parseUrl.Scheme = "https"
-			URL = parseUrl.String()
+		parseUrl, err = url.Parse(URL)
+		if err != nil {
+			return
 		}
-
-		if result, err := s.execTbkTpwdCreate(ctx, TbkTpwdCreateReq{
+		parseUrl.Scheme = "https"
+		URL = parseUrl.String()
+		tpwdCreateResult, err = s.execTbkTpwdCreate(ctx, TbkTpwdCreateReq{
 			Text: "啊实打实的撒大苏打萨达萨达萨达是的观点",
 			URL:  URL,
-		}); err != nil {
-			return "", err
-		} else {
-			order.Key = result.Model
-			return result.Model, nil
+		})
+		if err != nil {
+			return
 		}
+		result.Key = tpwdCreateResult.Model
+		return
 	}
-	return "", errors.New("目标商品未找到")
+	err = errors.New("目标商品未找到")
+	return
 }
 func (s *Service) ClickKey(order *model.Order) {
 	request, err := http.NewRequest(http.MethodGet, order.URL, nil)
@@ -313,12 +413,7 @@ func (s *Service) ClickKey(order *model.Order) {
 	return
 }
 func (s *Service) Convert(ctx context.Context, title string) (string, error) {
-	var adzoneID int64
-	if id, err := s.ac.Get("adzoneID").Int64(); err != nil {
-		return "", err
-	} else {
-		adzoneID = id
-	}
+	adzoneID := s.GetadzoneID()
 	result, err := s.execTbkDgMaterialOptional(ctx, TbkDgMaterialOptionalReq{
 		AdzoneId: int(adzoneID),
 		Q:        title,
@@ -353,14 +448,43 @@ func (s *Service) Convert(ctx context.Context, title string) (string, error) {
 }
 
 // 淘宝客签名 https://open.taobao.com/doc.htm?docId=101617&docType=1
-func Sign(strs ...string) (signature string) {
+func (s *Service) Sign(strs ...string) (signature string) {
 	sort.Strings(strs)
 	tmpstr := strings.Join(strs, "")
-	str := "a55fe6c77a947a439079640ecbcdc817" + tmpstr + "a55fe6c77a947a439079640ecbcdc817"
+	secret := s.GetAppSecret()
+	str := secret + tmpstr + secret
 	signature = fmt.Sprintf("%X", md5.Sum([]byte(str)))
 	return
 }
+func (s *Service) GetTKL(ctx context.Context, title, picURL, itemID string) (tkl string, err error) {
+	// 先从缓存中获取
+	// s.getTKLByID(itemID)
+	result, err := s.convertMyKey(ctx, title, picURL)
+	if err != nil {
+		err = fmt.Errorf("GetTKL failed: %w", err)
+		return
+	}
+	tkl = result.Key
+	return
+}
 
+func (s *Service) QueryTitleByItemID(ctx context.Context, itemID string) (title, picURL, shopName string, err error) {
+	itemInfoGet, err := s.execTbkItemInfoGet(ctx, TbkItemInfoGetReq{
+		NumIDs: itemID,
+	})
+	if err != nil {
+		err = fmt.Errorf("QueryTitleByItemID failed: %w", err)
+		return
+	}
+	if len(itemInfoGet) == 0 {
+		err = fmt.Errorf("QueryTitleByItemID get nothing")
+		return
+	}
+	title = itemInfoGet[0].Title
+	picURL = itemInfoGet[0].PictURL
+	shopName = itemInfoGet[0].Nick
+	return
+}
 func EazyCopyStruct(from interface{}, to interface{}) {
 	formValue := reflect.ValueOf(from)
 	toValue := reflect.Indirect(reflect.ValueOf(to))
@@ -427,19 +551,16 @@ func OpenXLS() {
 		}
 	}
 }
+func (s *Service) GetadzoneID() int64 {
+	return paladin.Int64(s.ac.Get("adzoneID"), 0)
+}
+func (s *Service) GettaokoulingAppKey() string {
+	return paladin.String(s.ac.Get("taokoulingAppKey"), "")
+}
 
 func (s *Service) HighCommission(ctx context.Context, numIid int64) (result HighCommissionResult, err error) {
-	var (
-		appKey   string
-		adzoneID int64
-	)
-
-	if adzoneID, err = s.ac.Get("adzoneID").Int64(); err != nil {
-		return
-	}
-	if appKey, err = s.ac.Get("taokoulingAppKey").String(); err != nil {
-		return
-	}
+	adzoneID := s.GetadzoneID()
+	appKey := s.GettaokoulingAppKey()
 	itemID := strconv.FormatInt(numIid, 10)
 	param := url.Values{}
 	param.Set("apikey", appKey)
@@ -457,15 +578,16 @@ func (s *Service) HighCommission(ctx context.Context, numIid int64) (result High
 	if err = s.client.JSON(ctx, request, &resp); err != nil {
 		return
 	}
+	if resp.Code != 0 {
+		err = fmt.Errorf("HighCommission: 错误代码: %d, 错误信息: %s", resp.Code, resp.Msg)
+		return
+	}
 	EazyCopyStruct(resp, &result)
 	return
 }
 func (s *Service) analyzingKey(ctx context.Context, fromKey string) (resp analyzingKeyResp, err error) {
 	param := url.Values{}
-	var appKey string
-	if appKey, err = s.ac.Get("taokoulingAppKey").String(); err != nil {
-		return
-	}
+	appKey := s.GettaokoulingAppKey()
 	param.Set("apikey", appKey)
 	param.Set("tkl", fromKey)
 	var request *http.Request
@@ -476,6 +598,11 @@ func (s *Service) analyzingKey(ctx context.Context, fromKey string) (resp analyz
 	if err = s.client.JSON(ctx, request, &resp); err != nil {
 		return
 	}
+	if resp.Code == 0 {
+		err = fmt.Errorf("analyzingKey: 错误信息:%s", resp.Msg)
+		return
+	}
+
 	return
 }
 

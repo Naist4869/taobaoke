@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	DBOrderVersion = 1
@@ -25,6 +27,7 @@ type Order struct {
 	PicURL           string    `bson:"pic_url" json:"pic_url"`                       // 主图地址
 	Count            int       `bson:"count" json:"count"`                           // 商品数量
 	Price            int64     `bson:"price" json:"price"`                           // 商品单价  X100
+	ReservePrice     int64     `bson:"reserve_price" json:"reserve_price"`           // 商品原价 X100
 	Commission       int64     `bson:"commission" json:"commission"`                 // 大约的佣金 X100
 	Rebate           int64     `bson:"rebate" json:"rebate"`                         // 返利金额
 	ItemID           int64     `bson:"item_id" json:"item_id"`                       // 590141576510	商品id
@@ -35,10 +38,23 @@ type Order struct {
 	TradeID          string    `bson:"trade_id" json:"trade_id"`                     // 294159887445064307	买家通过购物车购买的每个商品对应的订单编号，此订单编号并未在淘宝买家后台透出
 	TradeParentID    string    `bson:"trade_parent_id" json:"trade_parent_id"`       // 294159887445064307	买家在淘宝后台显示的订单编号
 	CouponShareURL   string    `bson:"coupon_share_url" json:"coupon_share_url"`     // uland.xxx	链接-宝贝+券二合一页面链接
+	TrendInfo        TrendInfo `bson:"trend_info" json:"trend_info"`                 // 价格趋势信息
+	ShopName         string    `bson:"shop_name" json:"shop_name"`                   // 店铺名称
+	ShopType         int       `bson:"shop_type" json:"shop_type"`                   // 店铺类型，0表示集市，1表示商城
 	URL              string    `bson:"url" json:"url"`                               // s.click.xxx	链接-宝贝推广链接
 	Key              string    `bson:"key" json:"key"`                               // 淘口令
 	Deleted          bool      `bson:"deleted" json:"-"`                             // 是否被删除  false没删除 true已删除
 	Meta             DbMeta    `bson:"meta" json:"meta"`                             // 版本
+}
+
+type TrendInfo struct {
+	Period        int    // 天数 默认为180
+	MaxPrice      string // 近Period天最高价格 X100
+	MinPrice      string // 近Period天最低价格 X100
+	RawJsonTrend  string // 趋势json字符串
+	OriginalPrice string // 原价  X100
+	CurrentPrice  string // 现价  X100
+	TrendMsg      string // 价格平稳  描述趋势字符串
 }
 
 // DbMeta 数据库元数据信息
@@ -46,6 +62,6 @@ type DbMeta struct {
 	Version int `bson:"version"` // 版本
 }
 
-func NewOrder(id string, userID string) *Order {
-	return &Order{ID: id, UserID: userID}
+func NewOrder(id string, userID string, adzoneID int64, title string, itemID int64, picURL string, shopName string, shopType int, price int64, reservePrice int64, rebate int64, URL string, couponShareURL string, key string) *Order {
+	return &Order{ID: id, UserID: userID, AdzoneID: adzoneID, Title: title, ItemID: itemID, PicURL: picURL, ShopName: shopName, ShopType: shopType, Price: price, ReservePrice: reservePrice, Rebate: rebate, URL: URL, CouponShareURL: couponShareURL, Key: key}
 }

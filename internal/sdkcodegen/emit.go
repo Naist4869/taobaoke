@@ -170,7 +170,7 @@ func (e *goEmitter) emitAPICall(x *apiCall) error {
 
 	// TODO: override the receiver of apiMethod
 	e.emitDoc(ident, x.doc)
-	e.e("func (s *Service) %s(ctx context.Context,req %s) (result %s,err error) {\n", ident, x.reqType, x.resultType)
+	e.e("func (s *Service) %s(ctx Context,req %s) (result %s,err error) {\n", ident, x.reqType, x.resultType)
 	e.e("var resp %s\n", x.respType)
 	e.e("if err = s.%s(ctx, req, &resp, \"%s\"); err != nil {\n", execMethodName, x.method)
 	e.e("return\n")

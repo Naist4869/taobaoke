@@ -24,25 +24,20 @@ type HighCommissionResp struct {
 		Data HighCommissionResult `json:"data"`
 	} `json:"result"`
 	RequestID string `json:"request_id"`
+	Code      int    `json:"code"`
+	Msg       string `json:"msg"`
 }
 type HighCommissionResult struct {
-	CategoryID          int    `json:"category_id"`
-	CouponClickURL      string `json:"coupon_click_url"`
-	CouponEndTime       string `json:"coupon_end_time"`
-	CouponInfo          string `json:"coupon_info"`
-	CouponStartTime     string `json:"coupon_start_time"`
-	ItemID              int64  `json:"item_id"`
-	MaxCommissionRate   string `json:"max_commission_rate"`
-	CouponTotalCount    int    `json:"coupon_total_count"`
-	CouponRemainCount   int    `json:"coupon_remain_count"`
-	MmCouponRemainCount int    `json:"mm_coupon_remain_count"`
-	MmCouponTotalCount  int    `json:"mm_coupon_total_count"`
-	MmCouponClickURL    string `json:"mm_coupon_click_url"`
-	MmCouponEndTime     string `json:"mm_coupon_end_time"`
-	MmCouponStartTime   string `json:"mm_coupon_start_time"`
-	MmCouponInfo        string `json:"mm_coupon_info"`
-	CouponType          int    `json:"coupon_type"`
-	ItemURL             string `json:"item_url"`
+	CategoryID        int    `json:"category_id"`
+	CouponClickURL    string `json:"coupon_click_url"`
+	CouponEndTime     string `json:"coupon_end_time"`
+	CouponInfo        string `json:"coupon_info"`
+	CouponRemainCount int    `json:"coupon_remain_count"`
+	CouponStartTime   string `json:"coupon_start_time"`
+	CouponTotalCount  int    `json:"coupon_total_count"`
+	ItemID            int64  `json:"item_id"`
+	ItemURL           string `json:"item_url"`
+	MaxCommissionRate string `json:"max_commission_rate"`
 }
 
 type HighCommissionErrorMsg struct {

@@ -1,12 +1,15 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
+	"taobaoke/tools"
 )
 
-const TimeFormat = "2006-01-02 15:04:05"
+type RawMessage = json.RawMessage
+type Time = tools.Time
 
 type analyzingKeyResp struct {
 	Ret       string `json:"ret"`
@@ -248,8 +251,8 @@ func (t TbkOrderDetailsGetReq) Name() string {
 }
 
 func (t TbkOrderDetailsGetReq) Query(queryMap map[string]string) {
-	queryMap["start_time"] = t.StartTime.Format(TimeFormat)
-	queryMap["end_time"] = t.EndTime.Format(TimeFormat)
+	queryMap["start_time"] = t.StartTime.String()
+	queryMap["end_time"] = t.EndTime.String()
 	if t.QueryType != 0 {
 		queryMap["query_type"] = strconv.Itoa(t.QueryType)
 	}
@@ -280,6 +283,102 @@ func (t *tbkOrderDetailsGetResp) Error() error {
 		return e
 	}
 	if len(t.TbkOrderDetailsGetResponse.Data.Results.TbkOrderDetailsGetResults) == 0 {
+		return errors.New("查询列表为空")
+	}
+	return nil
+}
+
+func (t TbkScInvitecodeReq) Code() int {
+	return tbkScInvitecodeGetCode
+}
+
+func (t TbkScInvitecodeReq) Response() Response {
+	return &tbkScInvitecodeGetResp{}
+}
+
+func (t TbkScInvitecodeReq) Name() string {
+	return "淘宝客邀请码生成-社交"
+}
+
+func (t TbkScInvitecodeReq) Query(queryMap map[string]string) {
+	queryMap["relation_app"] = t.RelationApp
+	queryMap["code_type"] = strconv.Itoa(t.CodeType)
+	if t.RelationID != 0 {
+		queryMap["relation_id"] = strconv.FormatInt(t.RelationID, 10)
+	}
+}
+
+func (t TbkScPublisherInfoSaveReq) Code() int {
+	return tbkScPublisherInfoSaveCode
+}
+
+func (t TbkScPublisherInfoSaveReq) Response() Response {
+	return &tbkScPublisherInfoSaveResp{}
+}
+
+func (t TbkScPublisherInfoSaveReq) Name() string {
+	return " 淘宝客信息备案"
+}
+
+func (t TbkScPublisherInfoSaveReq) Query(queryMap map[string]string) {
+	queryMap["info_type"] = strconv.Itoa(t.InfoType)
+	queryMap["inviter_code"] = t.InviterCode
+	if t.Note != "" {
+		queryMap["note"] = t.Note
+	}
+	if t.OfflineScene != "" {
+		queryMap["offline_scene"] = t.OfflineScene
+	}
+	if t.OnlineScene != "" {
+		queryMap["online_scene"] = t.OnlineScene
+	}
+	if len(t.RegisterInfo) != 0 {
+		queryMap["register_info"] = string(t.RegisterInfo)
+	}
+	if t.RelationFrom != "" {
+		queryMap["relation_from"] = t.RelationFrom
+	}
+	return
+}
+
+func (t TbkScPublisherInfoGetReq) Code() int {
+	return tbkScPublisherInfoGetCode
+}
+
+func (t TbkScPublisherInfoGetReq) Response() Response {
+	return &tbkScPublisherInfoGetResp{}
+}
+
+func (t TbkScPublisherInfoGetReq) Name() string {
+	return "淘宝客信息查询"
+}
+
+func (t TbkScPublisherInfoGetReq) Query(queryMap map[string]string) {
+	queryMap["info_type"] = strconv.Itoa(t.InfoType)
+	queryMap["relation_app"] = t.RelationApp
+	if t.ExternalId != "" {
+		queryMap["external_id"] = t.ExternalId
+	}
+	if t.PageNo != 0 {
+		queryMap["page_no"] = strconv.Itoa(t.PageNo)
+	}
+	if t.PageSize != 0 {
+		queryMap["page_size"] = strconv.Itoa(t.PageSize)
+	}
+	if t.RelationId != 0 {
+		queryMap["relation_id"] = strconv.FormatInt(t.RelationId, 10)
+	}
+	if t.SpecialId != "" {
+		queryMap["special_id"] = t.SpecialId
+	}
+	return
+}
+
+func (t *tbkScPublisherInfoGetResp) Error() error {
+	if e := t.RespCommon.Error(); e != nil {
+		return e
+	}
+	if t.TbkScPublisherInfoGetResponse.Data.TotalCount == 0 {
 		return errors.New("查询列表为空")
 	}
 	return nil

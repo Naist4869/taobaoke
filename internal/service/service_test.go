@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	pb "taobaoke/api"
+	"taobaoke/tools"
 	"testing"
 	"time"
 
@@ -101,10 +102,14 @@ func TestService_ItemInfoGet(t *testing.T) {
 	require.NoError(t, err)
 	spew.Dump(result)
 }
+
+//  https://oauth.taobao.com/authorize?response_type=code&client_id=30055875&redirect_uri=http://127.0.0.1:12345/error&state=1212&view=web
+
+// https://mos.m.taobao.com/inviter/register?inviterCode=7DXRK3&src=pub&app=common&rtag=成
 func TestService_TbkTpwdCreate(t *testing.T) {
 	result, err := testService.execTbkTpwdCreate(ctx, TbkTpwdCreateReq{
 		Text: "哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈",
-		URL:  "https://a.m.taobao.com/i608813238220.htm?price=35&sourceType=item&sourceType=item&suid=e73a2949-dc48-4e45-9f89-159d19b03a34&shareUniqueId=1065209629&ut_sk=1.XUO2xwN5GI4DAJ%2Bw3LcNY1ow_21646297_1592357149168.TaoPassword-WeiXin.1&un=473baace3c66226dfba7b0828e520322&share_crt_v=1&spm=a2159r.13376460.0.0&sp_tk=4oKkVkdSRDFGY3NBa0figqQ=",
+		URL:  "https://mos.m.taobao.com/inviter/register?inviterCode=7DXRK3&src=pub&app=common&rtag=cheng",
 	})
 	require.NoError(t, err)
 	spew.Dump(result)
@@ -167,10 +172,37 @@ func TestService_HighCommission(t *testing.T) {
 }
 
 func TestService_QueryOrder(t *testing.T) {
-	now := time.Now()
+	now := tools.Now()
 	result, err := testService.execTbkOrderDetailsGet(ctx, TbkOrderDetailsGetReq{
 		StartTime: now.Add(-time.Hour),
 		EndTime:   now,
+	})
+	require.NoError(t, err)
+	t.Logf("%#v", result)
+}
+func TestTbkScInvitecodeGet(t *testing.T) {
+	result, err := testService.execTbkScInvitecodeGet(ctx, TbkScInvitecodeReq{
+		RelationApp: "common",
+		CodeType:    1,
+	})
+	require.NoError(t, err)
+	// 7DXRK3
+	t.Logf("%#v", result)
+}
+
+func TestTbkScPublisherInfoSave(t *testing.T) {
+	result, err := testService.execTbkScPublisherInfoSave(ctx, TbkScPublisherInfoSaveReq{
+		InviterCode: "7DXRK3",
+		InfoType:    1,
+	})
+	require.NoError(t, err)
+	t.Logf("%#v", result)
+}
+
+func TestTbkScPublisherInfoGet(t *testing.T) {
+	result, err := testService.execTbkScPublisherInfoGet(ctx, TbkScPublisherInfoGetReq{
+		InfoType:    1,
+		RelationApp: "common",
 	})
 	require.NoError(t, err)
 	t.Logf("%#v", result)
@@ -184,7 +216,7 @@ func TestService_analyzingKey(t *testing.T) {
 }
 
 func TestService_ConvertMyKey(t *testing.T) {
-	key, err := testService.keyConvertKey(ctx, "€l99j1wskwpd€")
+	key, err := testService.keyConvertKey(ctx, "₴amEKcX3FfiF₴")
 	require.NoError(t, err)
 	spew.Dump(key)
 }

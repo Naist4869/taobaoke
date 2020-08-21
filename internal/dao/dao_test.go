@@ -42,6 +42,6 @@ func TestMain(m *testing.M) {
 	os.Exit(ret)
 }
 func TestOrderClient_Insert(t *testing.T) {
-	err := d.Insert(ctx, model.NewOrder("123", "123"))
+	err := d.Insert(ctx, &model.Order{ID: "123", UserID: "123"})
 	require.NoError(t, err)
 }

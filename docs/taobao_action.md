@@ -1,14 +1,153 @@
 # Action
 
-```go
- import (
- 	json "encoding/json"
- 	time "time"
- 	)
-```
-
 ## Models
 
+
+### `TbkScPublisherInfoGetReq` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`InfoType`|`int`|`info_type`|1	类型，必选 1:渠道信息；2:会员信息
+`RelationId`|`int64`|`relation_id,omitempty`|2323	渠道独占 - 渠道关系ID
+`PageNo`|`int`|`page_no,omitempty`|1	第几页
+`PageSize`|`int`|`page_size,omitempty`|	10	每页大小
+`SpecialId`|`string`|`special_id,omitempty`|1212	会员独占 - 会员运营ID
+`ExternalId`|`string`|`external_id,omitempty`|	12345	淘宝客外部用户标记，如自身系统账户ID；微信ID等
+`RelationApp`|`string`|`relation_app`|common	备案的场景：common（通用备案），etao（一淘备案），minietao（一淘小程序备案），offlineShop（线下门店备案），offlinePerson（线下个人备案）。如不填默认common。查询会员信息只需填写common即可
+
+
+### `tbkScPublisherInfoGetResp` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`TbkScPublisherInfoGetResponse`|`tbkScPublisherInfoGetResponse`|`tbk_sc_publisher_info_get_response`| 
+|`*RespCommon`|| 
+
+
+### `tbkScPublisherInfoGetResponse` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`Data`|`TbkScPublisherInfoGetResult`|`data`| 
+
+### `TbkScPublisherInfoGetResult` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`RootPidChannelList`|`RootPidChannelList`|`root_pid_channel_list`|  ["mm_1_1_1"]	渠道专属pidList
+`TotalCount     `|`   int           `|`   total_count`|40	共享字段 - 总记录数
+`InviterList    `|`   InviterList   `|`   inviter_list`|inviterList	共享字段 - 渠道或会员列表
+
+### `RootPidChannelList` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`String`|`[]string`|`string`| ["mm_1_1_1"]	渠道专属pidList
+
+### `InviterList` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`MapData`|`[]MapData`|`map_data`| inviterList	共享字段 - 渠道或会员列表
+
+### `MapData` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`MapData`|`[]MapData`|`map_data`| inviterList	共享字段 - 渠道或会员列表
+`RelationApp  `|`string      `|`relation_app`|	common	共享字段 - 备案场景：common（通用备案），etao（一淘备案），minietao（一淘小程序备案），offlineShop（线下门店备案），offlinePerson（线下个人备案）
+`CreateDate   `|`Time      `|`create_date`|2018-06-01 11:12:23	共享字段 - 备案日期
+`AccountName  `|`string      `|`account_name`|s**x	共享字段 - 渠道/会员昵称
+`RealName     `|`string      `|`real_name`|xxx	共享字段 - 渠道/会员姓名
+`RelationID   `|`int         `|`relation_id`|40232	渠道独有 - 渠道关系ID
+`OfflineScene `|`string      `|`offline_scene`|	门店	渠道独有 - 线下场景信息，1 - 门店，2- 学校，3 - 工厂，4 - 其他
+`OnlineScene  `|`string      `|`online_scene`|微信群	渠道独有 - 线上场景信息，1 - 微信群，2- QQ群，3 - 其他
+`Note         `|`string      `|`note`|小蜜蜂	渠道独有 - 媒体侧渠道备注信息
+`RootPid      `|`string      `|`root_pid`|mm_1_1_1	共享字段 - 渠道/会员专属pid
+`Rtag         `|`string      `|`rtag`|	123	共享字段 - 渠道/会员原始身份信息
+`OfflineInfo  `|`OfflineInfo `|`offline_info`|	线下	线下备案专属信息
+`SpecialID    `|`int         `|`special_id`|12345	会员独有 - 会员运营ID
+`PunishStatus `|`string      `|`punish_status`|1	渠道独有 - 处罚状态
+`ExternalID   `|`string      `|`external_id`|	12345	淘宝客外部用户标记，如自身系统账户ID；微信ID等
+
+### `OfflineInfo` 淘宝客-公用-私域用户备案信息查询
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`MapData`|`[]MapData`|`map_data`| inviterList	共享字段 - 渠道或会员列表
+`ShopName        `|`string `|`shop_name`|日用百货店	渠道独有 -店铺名称
+`ShopType        `|`string `|`shop_type`|生活服务类 电信营业厅	渠道独有 -店铺类型
+`PhoneNumber     `|`string `|`phone_number`|	1590000000	渠道独有 -手机号码
+`DetailAddress   `|`string `|`detail_address`| xx街道xx号楼	渠道独有 -详细地址
+`Location        `|`string `|`location`|	内蒙古自治区 呼和浩特市	渠道独有 -地区
+`ShopCertifyType `|`string `|`shop_certify_type`|营业执照	渠道独有 -证件类型
+`CertifyNumber   `|`string `|`certify_number`|23445677	渠道独有 -对应的证件证件类型编号
+`Career          `|`string `|`career`|个人 快递员	渠道独有 -经营类型
+
+### `TbkScPublisherInfoSaveReq` 淘宝客-公用-私域用户备案
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`RelationFrom`|`string`|`relation_from,omitempty`| 1	渠道备案 - 来源，取链接的来源
+`OfflineScene`|`string`|`offline_scene,omitempty`|	1	渠道备案 - 线下场景信息，1 - 门店，2- 学校，3 - 工厂，4 - 其他
+`OnlineScene`|`string`|`online_scene,omitempty`|1	渠道备案 - 线上场景信息，1 - 微信群，2- QQ群，3 - 其他
+`InviterCode`|`string`|`inviter_code`| xxx	渠道备案 - 淘宝客邀请渠道的邀请码
+`InfoType`|`int`|`info_type`|	1	类型，必选 默认为1:
+`Note`|`string`|`note,omitempty`|小蜜蜂	媒体侧渠道备注
+`RegisterInfo`|`RawMessage`| `register_info,omitempty`|{"phoneNumber":"18801088599","city":"江苏省","province":"南京市","location":"玄武区花园小区","detailAddress":"5号楼3单元101室","shopType":"社区店","shopName":"全家便利店","shopCertifyType":"营业执照","certifyNumber":"111100299001"}	线下备案注册信息,字段包含: 电话号码(phoneNumber，必填),省(province,必填),市(city,必填),区县街道(location,必填),详细地址(detailAddress,必填),经营类型(career,线下个人必填),店铺类型(shopType,线下店铺必填),店铺名称(shopName,线下店铺必填),店铺证书类型(shopCertifyType,线下店铺选填),店铺证书编号(certifyNumber,线下店铺选填)
+
+### `tbkScPublisherInfoSaveResp` 淘宝客-公用-私域用户备案
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`TbkScPublisherInfoSaveResponse`|`tbkScPublisherInfoSaveResponse`|`tbk_sc_publisher_info_save_response`| 
+|`*RespCommon`|| 
+
+
+### `tbkScPublisherInfoSaveResponse` 淘宝客-公用-私域用户备案
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`Data`|`TbkScPublisherInfoSaveResult`|`data`| 
+
+### `TbkScPublisherInfoSaveResult` 淘宝客-公用-私域用户备案
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`RelationId`|`int64`|`relation_id`|  40232	渠道关系ID
+`AccountName`|`string`|`account_name`|  	xxx	渠道昵称
+`SpecialId`|`int64`|`special_id`|  32304	会员运营ID
+`Desc`|`int64`|`string`|  绑定成功	如果重复绑定会提示：”重复绑定渠道“或”重复绑定粉丝“
+
+
+### `TbkScInvitecodeReq` 淘宝客邀请码生成-社交
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`RelationID`|`int64`|`relation_id,omitempty`| 11	渠道关系ID
+`RelationApp`|`string`|`relation_app`|common	渠道推广的物料类型
+`CodeType	`|`int`|`code_type`|1	邀请码类型，1 - 渠道邀请，2 - 渠道裂变，3 -会员邀请
+
+
+### `tbkScInvitecodeGetResp` 淘宝客邀请码生成-社交
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`ScInvitecodeGetResponse`|`tbkScInvitecodeGetResponse`|`tbk_sc_invitecode_get_response`| 
+|`*RespCommon`|| 
+
+
+### `tbkScInvitecodeGetResponse` 淘宝客邀请码生成-社交
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`Data`|`TbkScInvitecodeResult`|`data`| 
+
+### `TbkScInvitecodeResult` 淘宝客邀请码生成-社交
+
+Name|Type|JSON|Doc
+:---|:---|:---|:--
+`InviterCode `|`string`|`inviter_code`|  xxxx	邀请码
 
 ### `TbkItemInfoGetReq` 淘宝客商品详情查询（简版）
 
@@ -38,6 +177,7 @@ Name|Type|JSON|Doc
 Name|Type|JSON|Doc
 :---|:---|:---|:--
 `TbkItemInfoGetResults`|`[]TbkItemInfoGetResult`|`n_tbk_item`|  淘宝客商品
+
 
 ### `smallImages` 淘宝客商品详情查询（简版）
 
@@ -286,7 +426,7 @@ Name|Type|JSON|Doc
 :---|:---|:---|:--
 `CouponStartTime        `|`string     `| `coupon_start_time`|2017-10-29	优惠券信息-优惠券开始时间
 `CouponEndTime          `|`string     `| `coupon_end_time`|2017-10-29	优惠券信息-优惠券结束时间
-`InfoDxjh               `|`json.RawMessage`| `info_dxjh`|{"19013551":"2850","74510538":"2550"}	商品信息-定向计划信息
+`InfoDxjh               `|`RawMessage`| `info_dxjh`|{"19013551":"2850","74510538":"2550"}	商品信息-定向计划信息
 `TkTotalSales           `|`string     `| `tk_total_sales`|11	商品信息-淘客30天推广量
 `TkTotalCommi           `|`string     `| `tk_total_commi`|323	商品信息-月支出佣金(该字段废弃，请勿再用)
 `CouponID               `|`string     `| `coupon_id`|d62db1ab8d9546b1bf0ff49bda5fc33b	优惠券信息-优惠券id
@@ -367,8 +507,8 @@ Name|Type|JSON|Doc
 `PageSize	`|`int`|`page_size,omitempty`|20	页大小，默认20，1~100
 `MemberType`|`int`|`member_type,omitempty`| 2	推广者角色类型,2:二方，3:三方，不传，表示所有角色
 `TkStatus`|`int`|`tk_status,omitempty`|	12	淘客订单状态，12-付款，13-关闭，14-确认收货，3-结算成功;不传，表示所有状态
-`EndTime	`|`time.Time`|`end_time`|2019-04-23 12:28:22	订单查询结束时间，订单开始时间至订单结束时间，中间时间段日常要求不超过3个小时，但如618、双11、年货节等大促期间预估时间段不可超过20分钟，超过会提示错误，调用时请务必注意时间段的选择，以保证亲能正常调用！
-`StartTime`|`time.Time`|`start_time`| 2019-04-05 12:18:22	订单查询开始时间
+`EndTime	`|`Time`|`end_time`|2019-04-23 12:28:22	订单查询结束时间，订单开始时间至订单结束时间，中间时间段日常要求不超过3个小时，但如618、双11、年货节等大促期间预估时间段不可超过20分钟，超过会提示错误，调用时请务必注意时间段的选择，以保证亲能正常调用！
+`StartTime`|`Time`|`start_time`| 2019-04-05 12:18:22	订单查询开始时间
 `JumpType	`|`int`|`jump_type,omitempty`| 1	跳转类型，当向前或者向后翻页必须提供,-1: 向前翻页,1：向后翻页
 `PageNo`|`int`|`page_no,omitempty`| 	1	第几页，默认1，1~100
 `OrderScene`|`int`|`order_scene,omitempty`| 	1	场景订单场景类型，1:常规订单，2:渠道订单，3:会员运营订单，默认为1
@@ -452,7 +592,7 @@ Name|Type|JSON|Doc
 `TkCreateTime                      `|` string            `|`tk_create_time`                           | 2019-04-22 15:15:05	订单创建的时间，该时间同步淘宝，可能会略晚于买家在淘宝的订单创建时间
 `FlowSource                        `|` string            `|`flow_source`                              | 	--	产品类型
 `TerminalType                      `|` string            `|`terminal_type`                            | 无线	成交平台
-`ClickTime                         `|` string            `|`click_time`                               | 2019-04-22 15:14:55	通过推广链接达到商品、店铺详情页的点击时间
+`ClickTime                         `|` Time            `|`click_time`                               | 2019-04-22 15:14:55	通过推广链接达到商品、店铺详情页的点击时间
 `TkStatus                          `|` int               `|`tk_status`                                | 13	已付款：指订单已付款，但还未确认收货 已收货：指订单已确认收货，但商家佣金未支付 已结算：指订单已确认收货，且商家佣金已支付成功 已失效：指订单关闭/订单佣金小于0.01元，订单关闭主有：1）买家超时未付款； 2）买家付款前，买家/卖家取消了订付款后发起售中退款成功；3：订单结算，12：订单付款， 13订单失效，14：订单成功
 `ItemPrice                         `|` string            `|`item_price`                               | 2.1	商品单价
 `ItemID                            `|` int64             `|`item_id`                                  | 590141576510	商品id

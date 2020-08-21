@@ -15,6 +15,7 @@ import (
 	"strings"
 	"taobaoke/common"
 	"taobaoke/internal/model"
+	"taobaoke/tools"
 	"time"
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
@@ -40,7 +41,7 @@ import (
 
 //go:generate kratos tool wire
 var Provider = wire.NewSet(New, wire.Bind(new(pb.TBKServer), new(*Service)), NewLogger, NewBmClient, NewOrders)
-var Ngrok = "http://4372129e86a4.ap.ngrok.io"
+var Ngrok = "http://123.56.29.61"
 
 // Service service.
 type Service struct {
@@ -59,6 +60,9 @@ func (s *Service) GetAppSecret() string {
 	return paladin.String(s.ac.Get("appSecret"), "")
 }
 func (s *Service) KeyConvertKey(ctx context.Context, req *pb.KeyConvertKeyReq) (resp *pb.KeyConvertKeyResp, err error) {
+	deadline, _ := ctx.Deadline()
+	s.logger.Info("KeyConvertKey", zap.Duration("过期时间", time.Until(deadline)))
+
 	id, err := s.idGenerator.Generate()
 	if err != nil {
 		return
@@ -68,7 +72,7 @@ func (s *Service) KeyConvertKey(ctx context.Context, req *pb.KeyConvertKeyReq) (
 	if err != nil {
 		return
 	}
-	order := model.NewOrder(id, req.UserID, r.AdzoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType, r.Price, r.ReservePrice, r.Rebate, r.URL, r.CouponShareURL, r.Key)
+	order := model.NewOrder(id, req.UserID, r.AdzoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType, r.Price, r.ReservePrice, r.Coupon, r.Rebate, r.URL, r.CouponShareURL, r.Key)
 	trendInfo, err := s.PriceTrend(ctx, strconv.FormatInt(order.ItemID, 10))
 	if err != nil {
 		return
@@ -76,8 +80,9 @@ func (s *Service) KeyConvertKey(ctx context.Context, req *pb.KeyConvertKeyReq) (
 	order.TrendInfo = trendInfo
 	resp = &pb.KeyConvertKeyResp{
 		ToKey:   order.Key,
-		Price:   Separate(strconv.FormatInt(order.Price, 10)),
-		Rebate:  Separate(strconv.FormatInt(order.Rebate, 10)),
+		Price:   strconv.FormatFloat(float64(order.Price-order.Coupon)/100, 'f', -1, 64),
+		Rebate:  strconv.FormatFloat(float64(order.Rebate)/100, 'f', -1, 64),
+		Coupon:  strconv.FormatFloat(float64(order.Coupon)/100, 'f', -1, 64),
 		Title:   order.Title,
 		PicURL:  order.PicURL,
 		ItemURL: Ngrok + "/item/" + strconv.FormatInt(order.ItemID, 10),
@@ -168,9 +173,13 @@ func (s *Service) GetURI() string {
 func (s *Service) GetAppKey() string {
 	return paladin.String(s.ac.Get("appKey"), "")
 }
+func (s *Service) GetSession() string {
+	return paladin.String(s.ac.Get("session"), "")
+}
 func (s *Service) methodPost(ctx context.Context, req Request, resp Response, method string) (err error) {
 	uri := s.GetURI()
 	appKey := s.GetAppKey()
+	session := s.GetSession()
 	query := url.Values{}
 	queryMap := map[string]string{
 		"method":      method,
@@ -179,6 +188,7 @@ func (s *Service) methodPost(ctx context.Context, req Request, resp Response, me
 		"sign_method": "md5",
 		"v":           "2.0",
 		"timestamp":   time.Now().Format("2006-01-02 15:04:05"),
+		"session":     session,
 		//"simplify":    "true",
 	}
 	req.Query(queryMap)
@@ -225,18 +235,22 @@ func (s *Service) PriceTrend(ctx context.Context, itemID string) (trendInfo mode
 		err = fmt.Errorf("priceTrend解析响应: %w", err)
 		return
 	}
-	marshal, err := json.Marshal(resp.Data.Series[0].Data)
+	list := resp.Data.Series[0]
+	for i, v := range list.Data {
+		list.Data[i].Y = v.Y / 100
+	}
+	marshal, err := json.Marshal(list.Data)
 	if err != nil {
 		err = fmt.Errorf("priceTrend把价格趋势JsonArray转化为Raw失败: %w", err)
 		return
 	}
 	trendInfo.RawJsonTrend = string(marshal)
-	trendInfo.CurrentPrice = Separate(strconv.Itoa(resp.Data.Series[0].Current))
-	trendInfo.MaxPrice = Separate(strconv.Itoa(resp.Data.Series[0].Max))
-	trendInfo.MinPrice = Separate(strconv.Itoa(resp.Data.Series[0].Min))
-	trendInfo.OriginalPrice = Separate(strconv.Itoa(resp.Data.Series[0].Original))
-	trendInfo.Period = resp.Data.Series[0].Period
-	switch resp.Data.Series[0].Trend {
+	trendInfo.CurrentPrice = strconv.FormatFloat(list.Current/100, 'f', -1, 64)
+	trendInfo.MaxPrice = strconv.FormatFloat(list.Max/100, 'f', -1, 64)
+	trendInfo.MinPrice = strconv.FormatFloat(list.Min/100, 'f', -1, 64)
+	trendInfo.OriginalPrice = strconv.FormatFloat(list.Original/100, 'f', -1, 64)
+	trendInfo.Period = list.Period
+	switch list.Trend {
 	case -1:
 		trendInfo.TrendMsg = "价格下降"
 	case 1:
@@ -301,6 +315,7 @@ type convertMyKeyResult struct {
 	ShopType       int
 	Price          int64
 	Rebate         int64
+	Coupon         int64
 	URL            string
 	CouponShareURL string
 	Key            string
@@ -330,12 +345,12 @@ func (s *Service) convertMyKey(ctx context.Context, title, picUrl string) (resul
 			continue
 		}
 		var (
-			URL                 string
-			commissionRate      int64 = 1
-			price, reservePrice float64
-			highCommissionInfo  HighCommissionResult
-			parseUrl            *url.URL
-			tpwdCreateResult    TbkTpwdCreateResult
+			URL                         string
+			commissionRate              int64 = 1
+			price, reservePrice, coupon float64
+			highCommissionInfo          HighCommissionResult
+			parseUrl                    *url.URL
+			tpwdCreateResult            TbkTpwdCreateResult
 		)
 		result.Title = item.Title
 		result.ItemID = item.NumIid // 文档里说要废弃
@@ -347,6 +362,9 @@ func (s *Service) convertMyKey(ctx context.Context, title, picUrl string) (resul
 		if reservePrice, err = strconv.ParseFloat(item.ReservePrice, 64); err != nil {
 			s.logger.Error("convertMyKey", zap.Error(err), zap.String("一口价", item.ReservePrice))
 		}
+		if coupon, err = strconv.ParseFloat(item.CouponAmount, 64); err != nil {
+			s.logger.Error("convertMyKey", zap.Error(err), zap.String("优惠券金额", item.ReservePrice))
+		}
 		commissionRate, err = strconv.ParseInt(item.CommissionRate, 10, 64)
 		if err != nil {
 			s.logger.Error("convertMyKey", zap.Error(err), zap.String("佣金比率", item.CommissionRate))
@@ -357,6 +375,7 @@ func (s *Service) convertMyKey(ctx context.Context, title, picUrl string) (resul
 		result.ReservePrice = int64(reservePrice * 100)
 		result.Price = int64(price * 100)
 		result.Rebate = int64(price*float64(commissionRate)) / 100
+		result.Coupon = int64(coupon * 100)
 		result.URL = item.URL
 		result.CouponShareURL = item.CouponShareURL
 		if item.CouponShareURL != "" {
@@ -404,11 +423,11 @@ func (s *Service) ClickKey(order *model.Order) {
 		dumpRequest, _ := httputil.DumpRequest(request, false)
 		s.logger.Error("ClickKey DO请求失败", zap.Error(err), zap.Any("request", dumpRequest), zap.String("userID", order.UserID), zap.Int64("itemID", order.ItemID), zap.Int64("adzoneID", order.AdzoneID), zap.String("URL", order.URL))
 	}
-	clickTime := time.Now()
+	clickTime := tools.Now()
 	order.ClickTime = clickTime
-	s.logger.Info("ClickKey成功", zap.String("userID", order.UserID), zap.Int64("itemID", order.ItemID), zap.Time("本地点击时间", clickTime), zap.Int64("adzoneID", order.AdzoneID), zap.String("URL", order.URL))
+	s.logger.Info("ClickKey成功", zap.String("userID", order.UserID), zap.Int64("itemID", order.ItemID), zap.String("本地点击时间", clickTime.String()), zap.Int64("adzoneID", order.AdzoneID), zap.String("URL", order.URL))
 	if err := s.orders.Add(order); err != nil {
-		s.logger.Error("ClickKey 添加至本地订单失败", zap.Error(err), zap.String("userID", order.UserID), zap.Int64("itemID", order.ItemID), zap.Time("本地点击时间", clickTime), zap.Int64("adzoneID", order.AdzoneID), zap.String("URL", order.URL))
+		s.logger.Error("ClickKey 添加至本地订单失败", zap.Error(err), zap.String("userID", order.UserID), zap.Int64("itemID", order.ItemID), zap.String("本地点击时间", clickTime.String()), zap.Int64("adzoneID", order.AdzoneID), zap.String("URL", order.URL))
 	}
 	return
 }

@@ -2,10 +2,180 @@
 
 package service
 
-import (
-	json "encoding/json"
-	time "time"
-)
+// TbkScPublisherInfoGetReq 淘宝客-公用-私域用户备案信息查询
+type TbkScPublisherInfoGetReq struct {
+	// InfoType 1	类型，必选 1:渠道信息；2:会员信息
+	InfoType int `json:"info_type"`
+	// RelationId 2323	渠道独占 - 渠道关系ID
+	RelationId int64 `json:"relation_id,omitempty"`
+	// PageNo 1	第几页
+	PageNo int `json:"page_no,omitempty"`
+	// PageSize 	10	每页大小
+	PageSize int `json:"page_size,omitempty"`
+	// SpecialId 1212	会员独占 - 会员运营ID
+	SpecialId string `json:"special_id,omitempty"`
+	// ExternalId 	12345	淘宝客外部用户标记，如自身系统账户ID；微信ID等
+	ExternalId string `json:"external_id,omitempty"`
+	// RelationApp common	备案的场景：common（通用备案），etao（一淘备案），minietao（一淘小程序备案），offlineShop（线下门店备案），offlinePerson（线下个人备案）。如不填默认common。查询会员信息只需填写common即可
+	RelationApp string `json:"relation_app"`
+}
+
+// tbkScPublisherInfoGetResp 淘宝客-公用-私域用户备案信息查询
+type tbkScPublisherInfoGetResp struct {
+	TbkScPublisherInfoGetResponse tbkScPublisherInfoGetResponse `json:"tbk_sc_publisher_info_get_response"`
+	*RespCommon
+}
+
+// tbkScPublisherInfoGetResponse 淘宝客-公用-私域用户备案信息查询
+type tbkScPublisherInfoGetResponse struct {
+	Data TbkScPublisherInfoGetResult `json:"data"`
+}
+
+// TbkScPublisherInfoGetResult 淘宝客-公用-私域用户备案信息查询
+type TbkScPublisherInfoGetResult struct {
+	// RootPidChannelList ["mm_1_1_1"]	渠道专属pidList
+	RootPidChannelList RootPidChannelList `json:"root_pid_channel_list"`
+	// TotalCount 40	共享字段 - 总记录数
+	TotalCount int `json:"total_count"`
+	// InviterList inviterList	共享字段 - 渠道或会员列表
+	InviterList InviterList `json:"inviter_list"`
+}
+
+// RootPidChannelList 淘宝客-公用-私域用户备案信息查询
+type RootPidChannelList struct {
+	// String ["mm_1_1_1"]	渠道专属pidList
+	String []string `json:"string"`
+}
+
+// InviterList 淘宝客-公用-私域用户备案信息查询
+type InviterList struct {
+	// MapData inviterList	共享字段 - 渠道或会员列表
+	MapData []MapData `json:"map_data"`
+}
+
+// MapData 淘宝客-公用-私域用户备案信息查询
+type MapData struct {
+	// MapData inviterList	共享字段 - 渠道或会员列表
+	MapData []MapData `json:"map_data"`
+	// RelationApp 	common	共享字段 - 备案场景：common（通用备案），etao（一淘备案），minietao（一淘小程序备案），offlineShop（线下门店备案），offlinePerson（线下个人备案）
+	RelationApp string `json:"relation_app"`
+	// CreateDate 2018-06-01 11:12:23	共享字段 - 备案日期
+	CreateDate Time `json:"create_date"`
+	// AccountName s**x	共享字段 - 渠道/会员昵称
+	AccountName string `json:"account_name"`
+	// RealName xxx	共享字段 - 渠道/会员姓名
+	RealName string `json:"real_name"`
+	// RelationID 40232	渠道独有 - 渠道关系ID
+	RelationID int `json:"relation_id"`
+	// OfflineScene 	门店	渠道独有 - 线下场景信息，1 - 门店，2- 学校，3 - 工厂，4 - 其他
+	OfflineScene string `json:"offline_scene"`
+	// OnlineScene 微信群	渠道独有 - 线上场景信息，1 - 微信群，2- QQ群，3 - 其他
+	OnlineScene string `json:"online_scene"`
+	// Note 小蜜蜂	渠道独有 - 媒体侧渠道备注信息
+	Note string `json:"note"`
+	// RootPid mm_1_1_1	共享字段 - 渠道/会员专属pid
+	RootPid string `json:"root_pid"`
+	// Rtag 	123	共享字段 - 渠道/会员原始身份信息
+	Rtag string `json:"rtag"`
+	// OfflineInfo 	线下	线下备案专属信息
+	OfflineInfo OfflineInfo `json:"offline_info"`
+	// SpecialID 12345	会员独有 - 会员运营ID
+	SpecialID int `json:"special_id"`
+	// PunishStatus 1	渠道独有 - 处罚状态
+	PunishStatus string `json:"punish_status"`
+	// ExternalID 	12345	淘宝客外部用户标记，如自身系统账户ID；微信ID等
+	ExternalID string `json:"external_id"`
+}
+
+// OfflineInfo 淘宝客-公用-私域用户备案信息查询
+type OfflineInfo struct {
+	// MapData inviterList	共享字段 - 渠道或会员列表
+	MapData []MapData `json:"map_data"`
+	// ShopName 日用百货店	渠道独有 -店铺名称
+	ShopName string `json:"shop_name"`
+	// ShopType 生活服务类 电信营业厅	渠道独有 -店铺类型
+	ShopType string `json:"shop_type"`
+	// PhoneNumber 	1590000000	渠道独有 -手机号码
+	PhoneNumber string `json:"phone_number"`
+	// DetailAddress xx街道xx号楼	渠道独有 -详细地址
+	DetailAddress string `json:"detail_address"`
+	// Location 	内蒙古自治区 呼和浩特市	渠道独有 -地区
+	Location string `json:"location"`
+	// ShopCertifyType 营业执照	渠道独有 -证件类型
+	ShopCertifyType string `json:"shop_certify_type"`
+	// CertifyNumber 23445677	渠道独有 -对应的证件证件类型编号
+	CertifyNumber string `json:"certify_number"`
+	// Career 个人 快递员	渠道独有 -经营类型
+	Career string `json:"career"`
+}
+
+// TbkScPublisherInfoSaveReq 淘宝客-公用-私域用户备案
+type TbkScPublisherInfoSaveReq struct {
+	// RelationFrom 1	渠道备案 - 来源，取链接的来源
+	RelationFrom string `json:"relation_from,omitempty"`
+	// OfflineScene 	1	渠道备案 - 线下场景信息，1 - 门店，2- 学校，3 - 工厂，4 - 其他
+	OfflineScene string `json:"offline_scene,omitempty"`
+	// OnlineScene 1	渠道备案 - 线上场景信息，1 - 微信群，2- QQ群，3 - 其他
+	OnlineScene string `json:"online_scene,omitempty"`
+	// InviterCode xxx	渠道备案 - 淘宝客邀请渠道的邀请码
+	InviterCode string `json:"inviter_code"`
+	// InfoType 	1	类型，必选 默认为1:
+	InfoType int `json:"info_type"`
+	// Note 小蜜蜂	媒体侧渠道备注
+	Note string `json:"note,omitempty"`
+	// RegisterInfo {"phoneNumber":"18801088599","city":"江苏省","province":"南京市","location":"玄武区花园小区","detailAddress":"5号楼3单元101室","shopType":"社区店","shopName":"全家便利店","shopCertifyType":"营业执照","certifyNumber":"111100299001"}	线下备案注册信息,字段包含: 电话号码(phoneNumber，必填),省(province,必填),市(city,必填),区县街道(location,必填),详细地址(detailAddress,必填),经营类型(career,线下个人必填),店铺类型(shopType,线下店铺必填),店铺名称(shopName,线下店铺必填),店铺证书类型(shopCertifyType,线下店铺选填),店铺证书编号(certifyNumber,线下店铺选填)
+	RegisterInfo RawMessage `json:"register_info,omitempty"`
+}
+
+// tbkScPublisherInfoSaveResp 淘宝客-公用-私域用户备案
+type tbkScPublisherInfoSaveResp struct {
+	TbkScPublisherInfoSaveResponse tbkScPublisherInfoSaveResponse `json:"tbk_sc_publisher_info_save_response"`
+	*RespCommon
+}
+
+// tbkScPublisherInfoSaveResponse 淘宝客-公用-私域用户备案
+type tbkScPublisherInfoSaveResponse struct {
+	Data TbkScPublisherInfoSaveResult `json:"data"`
+}
+
+// TbkScPublisherInfoSaveResult 淘宝客-公用-私域用户备案
+type TbkScPublisherInfoSaveResult struct {
+	// RelationId 40232	渠道关系ID
+	RelationId int64 `json:"relation_id"`
+	// AccountName 	xxx	渠道昵称
+	AccountName string `json:"account_name"`
+	// SpecialId 32304	会员运营ID
+	SpecialId int64 `json:"special_id"`
+	// Desc 绑定成功	如果重复绑定会提示：”重复绑定渠道“或”重复绑定粉丝“
+	Desc int64 `json:"string"`
+}
+
+// TbkScInvitecodeReq 淘宝客邀请码生成-社交
+type TbkScInvitecodeReq struct {
+	// RelationID 11	渠道关系ID
+	RelationID int64 `json:"relation_id,omitempty"`
+	// RelationApp common	渠道推广的物料类型
+	RelationApp string `json:"relation_app"`
+	// CodeType	 1	邀请码类型，1 - 渠道邀请，2 - 渠道裂变，3 -会员邀请
+	CodeType int `json:"code_type"`
+}
+
+// tbkScInvitecodeGetResp 淘宝客邀请码生成-社交
+type tbkScInvitecodeGetResp struct {
+	ScInvitecodeGetResponse tbkScInvitecodeGetResponse `json:"tbk_sc_invitecode_get_response"`
+	*RespCommon
+}
+
+// tbkScInvitecodeGetResponse 淘宝客邀请码生成-社交
+type tbkScInvitecodeGetResponse struct {
+	Data TbkScInvitecodeResult `json:"data"`
+}
+
+// TbkScInvitecodeResult 淘宝客邀请码生成-社交
+type TbkScInvitecodeResult struct {
+	// InviterCode xxxx	邀请码
+	InviterCode string `json:"inviter_code"`
+}
 
 // TbkItemInfoGetReq 淘宝客商品详情查询（简版）
 type TbkItemInfoGetReq struct {
@@ -370,7 +540,7 @@ type TbkDgMaterialOptionalResult struct {
 	// CouponEndTime 2017-10-29	优惠券信息-优惠券结束时间
 	CouponEndTime string `json:"coupon_end_time"`
 	// InfoDxjh {"19013551":"2850","74510538":"2550"}	商品信息-定向计划信息
-	InfoDxjh json.RawMessage `json:"info_dxjh"`
+	InfoDxjh RawMessage `json:"info_dxjh"`
 	// TkTotalSales 11	商品信息-淘客30天推广量
 	TkTotalSales string `json:"tk_total_sales"`
 	// TkTotalCommi 323	商品信息-月支出佣金(该字段废弃，请勿再用)
@@ -526,9 +696,9 @@ type TbkOrderDetailsGetReq struct {
 	// TkStatus 	12	淘客订单状态，12-付款，13-关闭，14-确认收货，3-结算成功;不传，表示所有状态
 	TkStatus int `json:"tk_status,omitempty"`
 	// EndTime	 2019-04-23 12:28:22	订单查询结束时间，订单开始时间至订单结束时间，中间时间段日常要求不超过3个小时，但如618、双11、年货节等大促期间预估时间段不可超过20分钟，超过会提示错误，调用时请务必注意时间段的选择，以保证亲能正常调用！
-	EndTime time.Time `json:"end_time"`
+	EndTime Time `json:"end_time"`
 	// StartTime 2019-04-05 12:18:22	订单查询开始时间
-	StartTime time.Time `json:"start_time"`
+	StartTime Time `json:"start_time"`
 	// JumpType	 1	跳转类型，当向前或者向后翻页必须提供,-1: 向前翻页,1：向后翻页
 	JumpType int `json:"jump_type,omitempty"`
 	// PageNo 	1	第几页，默认1，1~100
@@ -650,7 +820,7 @@ type TbkOrderDetailsGetResult struct {
 	// TerminalType 无线	成交平台
 	TerminalType string `json:"terminal_type"`
 	// ClickTime 2019-04-22 15:14:55	通过推广链接达到商品、店铺详情页的点击时间
-	ClickTime string `json:"click_time"`
+	ClickTime Time `json:"click_time"`
 	// TkStatus 13	已付款：指订单已付款，但还未确认收货 已收货：指订单已确认收货，但商家佣金未支付 已结算：指订单已确认收货，且商家佣金已支付成功 已失效：指订单关闭/订单佣金小于0.01元，订单关闭主有：1）买家超时未付款； 2）买家付款前，买家/卖家取消了订付款后发起售中退款成功；3：订单结算，12：订单付款， 13订单失效，14：订单成功
 	TkStatus int `json:"tk_status"`
 	// ItemPrice 2.1	商品单价

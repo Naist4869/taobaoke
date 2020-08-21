@@ -1,4 +1,4 @@
-// +build sdkcodegen
+//+build sdkcodegen
 
 package main
 
@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 func main() {
+	log.Println("开始生成代码")
 	// TODO: error handling
 	filename := os.Args[1]
 	var destFilename string
@@ -22,9 +24,10 @@ func main() {
 	} else {
 		// blindly append `.go` so the result looks like `foo.md.go`
 		destFilename = filename + ".go"
-
 	}
+	log.Println("目标文件名", destFilename)
 	pkg, _ = filepath.Split(destFilename)
+	log.Println("目标文件所在目录", pkg)
 	split := strings.Split(pkg, `/`)
 	if len(split)-2 >= 0 {
 		pkg = split[len(split)-2]
@@ -38,6 +41,8 @@ func main() {
 		os.Exit(1)
 		return // unreachable
 	}
+	log.Println("markdown文件名", file.Name())
+
 	defer file.Close()
 
 	content, err := ioutil.ReadAll(file)
@@ -46,6 +51,7 @@ func main() {
 		os.Exit(1)
 		return // unreachable
 	}
+	log.Println("读取成功")
 
 	mdRoot := parseDocument(content)
 	hir, err := analyzeDocument(mdRoot)
@@ -54,10 +60,13 @@ func main() {
 		os.Exit(1)
 		return // unreachable
 	}
+	log.Println("分析文件成功")
 
 	var sink io.Writer
 	if emitToStdout {
 		sink = os.Stdout
+		log.Println("写入标准输出")
+
 	} else {
 		file, err := os.Create(destFilename)
 		if err != nil {
@@ -65,6 +74,8 @@ func main() {
 			os.Exit(1)
 			return // unreachable
 		}
+		log.Println("创建文件成功")
+
 		bufWriter := bufio.NewWriter(file)
 		sink = bufWriter
 		defer func() {
@@ -82,6 +93,7 @@ func main() {
 		os.Exit(1)
 		return // unreachable
 	}
+	log.Println("填充文件成功")
 
 	err = em.Finalize()
 	if err != nil {
@@ -89,4 +101,6 @@ func main() {
 		os.Exit(1)
 		return // unreachable
 	}
+	log.Println("完成")
+
 }

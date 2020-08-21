@@ -2,18 +2,26 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"taobaoke/internal/di"
+
 	"github.com/go-kratos/kratos/pkg/conf/paladin"
 	"github.com/go-kratos/kratos/pkg/log"
 )
 
+var (
+	Version, Build string
+)
+
 func main() {
 	flag.Parse()
+	fmt.Println("Version:", Version)
+	fmt.Println("Build Time:", Build)
 	log.Init(nil) // debug flag: log.dir={path}
 	defer log.Close()
 	log.Info("taobaoke start")

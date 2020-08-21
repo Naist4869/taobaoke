@@ -41,3 +41,33 @@ func (s *Service) execTbkOrderDetailsGet(ctx Context, req TbkOrderDetailsGetReq)
 	EazyCopyStruct(resp, &result)
 	return
 }
+
+// execTbkScInvitecodeGet 淘宝客邀请码生成-社交
+func (s *Service) execTbkScInvitecodeGet(ctx Context, req TbkScInvitecodeReq) (result TbkScInvitecodeResult, err error) {
+	var resp tbkScInvitecodeGetResp
+	if err = s.methodPost(ctx, req, &resp, "taobao.tbk.sc.invitecode.get"); err != nil {
+		return
+	}
+	EazyCopyStruct(resp, &result)
+	return
+}
+
+// execTbkScPublisherInfoSave 淘宝客信息备案
+func (s *Service) execTbkScPublisherInfoSave(ctx Context, req TbkScPublisherInfoSaveReq) (result TbkScPublisherInfoSaveResult, err error) {
+	var resp tbkScPublisherInfoSaveResp
+	if err = s.methodPost(ctx, req, &resp, "taobao.tbk.sc.publisher.info.save"); err != nil {
+		return
+	}
+	EazyCopyStruct(resp, &result)
+	return
+}
+
+// execTbkScPublisherInfoGet 淘宝客信息查询
+func (s *Service) execTbkScPublisherInfoGet(ctx Context, req TbkScPublisherInfoGetReq) (result TbkScPublisherInfoGetResult, err error) {
+	var resp tbkScPublisherInfoGetResp
+	if err = s.methodPost(ctx, req, &resp, "taobao.tbk.sc.publisher.info.get"); err != nil {
+		return
+	}
+	EazyCopyStruct(resp, &result)
+	return
+}

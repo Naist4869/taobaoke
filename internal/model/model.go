@@ -15,15 +15,15 @@ type PriceTrendResp struct {
 	Code int `json:"code"`
 	Data struct {
 		Series []struct {
-			Max      int `json:"max"`
-			MaxStamp int `json:"max_stamp"`
-			Min      int `json:"min"`
-			MinStamp int `json:"min_stamp"`
-			Original int `json:"original"`
-			Current  int `json:"current"`
+			Max      float64 `json:"max"`
+			MaxStamp int64   `json:"max_stamp"`
+			Min      float64 `json:"min"`
+			MinStamp int64   `json:"min_stamp"`
+			Original float64 `json:"original"`
+			Current  float64 `json:"current"`
 			Data     []struct {
-				X int `json:"x"`
-				Y int `json:"y"`
+				X int64   `json:"x"`
+				Y float64 `json:"y"`
 			} `json:"data"`
 			Trend  int `json:"trend"`
 			Period int `json:"period"`

@@ -29,3 +29,29 @@ Name|Request Type|Response Type|Result Type|URL|Doc
 Name|Request Type|Response Type|Result Type|URL|Doc
 :---|------------|-------------|------------|:--|:--
 `execTbkOrderDetailsGet`|`TbkOrderDetailsGetReq`|`tbkOrderDetailsGetResp`|`[]TbkOrderDetailsGetResult`|`POST taobao.tbk.order.details.get`|[淘宝客-推广者-所有订单查询](https://open.taobao.com/api.htm?spm=a219a.7386797.0.0.16db669aHj3otH&source=search&docId=43328&docType=2)
+
+# 淘宝客-公用-私域用户邀请码生成
+
+## API calls
+
+Name|Request Type|Response Type|Result Type|URL|Doc
+:---|------------|-------------|------------|:--|:--
+`execTbkScInvitecodeGet`|`TbkScInvitecodeReq`|`tbkScInvitecodeGetResp`|`TbkScInvitecodeResult`|`POST taobao.tbk.sc.invitecode.get`|[淘宝客邀请码生成-社交](https://open.taobao.com/api.htm?docId=38046&docType=2)
+
+# 淘宝客-公用-私域用户备案 
+
+## API calls
+
+Name|Request Type|Response Type|Result Type|URL|Doc
+:---|------------|-------------|------------|:--|:--
+`execTbkScPublisherInfoSave`|`TbkScPublisherInfoSaveReq`|`tbkScPublisherInfoSaveResp`|`TbkScPublisherInfoSaveResult`|`POST taobao.tbk.sc.publisher.info.save`|[淘宝客信息备案](https://open.taobao.com/api.htm?docId=37988&docType=2)
+
+# 淘宝客-公用-私域用户备案信息查询
+
+## API calls
+
+Name|Request Type|Response Type|Result Type|URL|Doc
+:---|------------|-------------|------------|:--|:--
+`execTbkScPublisherInfoGet`|`TbkScPublisherInfoGetReq`|`tbkScPublisherInfoGetResp`|`TbkScPublisherInfoGetResult`|`POST taobao.tbk.sc.publisher.info.get`|[淘宝客信息查询](https://open.taobao.com/api.htm?docId=37989&docType=2)
+
+

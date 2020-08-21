@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 	"taobaoke/internal/model"
-	"time"
+	"taobaoke/tools"
 
 	"go.uber.org/zap"
 
@@ -117,12 +117,12 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 			continue
 		}
 		localOrder := o.unmatched[key]
-		clickTime, err := time.Parse(TimeFormat, remoteOrder.ClickTime)
-		if err != nil {
-			o.logger.Error("MatchingUnmatched 解析点击时间", zap.Error(err), zap.String("远程订单点击时间", remoteOrder.ClickTime))
-			continue
-		}
-		if !isClickTimeMatch(clickTime, localOrder.ClickTime) {
+		//clickTime, err := time.Parse(TimeFormat, remoteOrder.ClickTime)
+		//if err != nil {
+		//	o.logger.Error("MatchingUnmatched 解析点击时间", zap.Error(err), zap.String("远程订单点击时间", remoteOrder.ClickTime))
+		//	continue
+		//}
+		if !isClickTimeMatch(remoteOrder.ClickTime, localOrder.ClickTime) {
 			o.logger.Info("订单本地不匹配,跳过")
 			continue
 		}
@@ -132,8 +132,8 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 
 	}
 }
-func isClickTimeMatch(clickTime, localClickTime time.Time) bool {
-	distance := clickTime.Second() - localClickTime.Second()
+func isClickTimeMatch(clickTime, localClickTime tools.Time) bool {
+	distance := clickTime.Sub(localClickTime).Seconds()
 	return -5 <= distance && distance <= 5
 }
 func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetailsGetResult) {

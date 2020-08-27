@@ -2,7 +2,6 @@ package tools
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -16,8 +15,6 @@ var (
 
 const (
 	defaultLayout = "2006-01-02 15:04:05"
-
-	locationFilePath = "data/localtime"
 )
 
 var (
@@ -168,16 +165,17 @@ func (t Time) SameDay(another Time) bool {
 	return time.Time(t).Year() == time.Time(another).Year() && time.Time(t).YearDay() == time.Time(another).YearDay()
 }
 
-func (t *Time) UnmarshalJSON(bytes []byte) error {
-	var s string
-	if err := json.Unmarshal(bytes, &s); err != nil {
-		return err
+func (t *Time) UnmarshalJSON(data []byte) error {
+	data = bytes.Trim(data, `""`)
+	s := string(data)
+	if s == "--" || s == "" {
+		return nil
 	}
-	parse, err := time.Parse(defaultLayout, s)
+	parsedTime, err := ParseTimeInLength(s)
 	if err != nil {
 		return err
 	}
-	*t = Time(parse)
+	*t = parsedTime
 	return nil
 }
 

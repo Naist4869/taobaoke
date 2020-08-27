@@ -2,9 +2,11 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"taobaoke/internal/dao/gdbc"
 	"taobaoke/internal/model"
+	"taobaoke/tools"
 
 	"github.com/go-kratos/kratos/pkg/conf/paladin"
 
@@ -23,10 +25,27 @@ var (
 )
 
 type OrderDataService interface {
-	Insert(ctx context.Context, o *model.Order) (err error)
-	FindOrderByID(ctx context.Context, id string) (order *model.Order, err error)
+	FindOrderByID(ctx context.Context, id int64) (order *model.Order, err error)
+	FindOrderByIDs(ctx context.Context, ids []int64) (order []*model.Order, err error)
+	FindOrderByTradeParentID(ctx context.Context, ids []string) (order []*model.Order, err error)
+	FindOneAndUpdateCommission(ctx context.Context, id string, order *model.Order) (err error)
+	OrderMatchService
 }
 
+type OrderMatchService interface {
+	Insert(ctx context.Context, o *model.Order) (err error)
+	SetNXToUnmatch(ctx context.Context, itemID, adZoneID int64, orderNo string) (ok bool, err error)
+	SetToUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order) (ok bool, err error)
+	UnmatchGet(ctx context.Context, itemID, adZoneID int64) (*model.Order, error)
+	UnmatchGetAll(ctx context.Context) ([]string, error)
+	ExistInUnmatch(ctx context.Context, itemID, adZoneID int64) (exist bool, err error)
+	DelFromUnmatchMap(ctx context.Context, itemID, adZoneID int64) (int64, error)
+	QueryOrderByTradeParentID(ctx context.Context, ids []string, onlyUnfinished bool) (results []*model.Order, err error)
+	QueryOrderByStatus(ctx context.Context, start, end tools.Time, status ...model.OrderStatus) ([]*model.Order, error)
+	QueryNotGiveSalaryOrderByUserID(ctx context.Context, id string) (result []*model.Order, err error)
+	UpdateSingleOrderGeneric(ctx context.Context, id string, additionalFilter, operation bson.M) (err error)
+	DelFromOrderCache(ctx context.Context, tradeParentIDs []string) (n int64, err error)
+}
 type OrderClient struct {
 	collections map[string]*mongo.Collection // 数据表map
 	Logger      *log.Logger
@@ -47,9 +66,13 @@ func NewOrderClient(client *mongo.Client, logger *log.Logger) (*OrderClient, err
 		collections: make(map[string]*mongo.Collection, 3),
 		Logger:      logger.With(zap.String("组件", "order")),
 	}
-	//if err := oc.Init(client, cfg.DB); err != nil {
-	//	return nil, err
+
+	//if !tools.IsDebug() {
+	if err := oc.Init(client, cfg.DB); err != nil {
+		return nil, err
+	}
 	//}
+
 	return oc, nil
 }
 func (oc *OrderClient) Keys() map[string]*gdbc.Spec {
@@ -65,6 +88,7 @@ func (oc *OrderClient) Keys() map[string]*gdbc.Spec {
 	specs[model.DBOrderKey] = orderSpec
 	return specs
 }
+
 func (oc *OrderClient) Init(client *mongo.Client, db string) error {
 
 	keys := oc.Keys()
@@ -96,6 +120,7 @@ func (oc *OrderClient) Init(client *mongo.Client, db string) error {
 	}
 	return nil
 }
+
 func (oc *OrderClient) Insert(ctx context.Context, o *model.Order) (err error) {
 	if _, err = oc.collections[model.DBOrderKey].InsertOne(ctx, *o); err != nil {
 		if IsInsertDuplicateError(err) {
@@ -110,18 +135,71 @@ func (oc *OrderClient) Insert(ctx context.Context, o *model.Order) (err error) {
 	return
 }
 
-func (oc *OrderClient) FindOrderByID(ctx context.Context, id string) (order *model.Order, err error) {
+func (oc *OrderClient) FindOrderByIDs(ctx context.Context, ids []int64) (orders []*model.Order, err error) {
 	query := bson.M{
-		model.IDField: id,
+		model.IDField: bson.M{IN: ids},
 	}
-	if orders, _, err := oc.queryOrder(ctx, query, nil, 0, 1, nil, nil); err != nil {
-		return nil, errors.New("根据id获取用户错误")
-	} else if len(orders) == 0 {
+	orders, _, err = oc.queryOrder(ctx, query, nil, 0, 0, nil, nil)
+	if err != nil {
+		oc.Logger.Error("FindOrderByID", zap.Error(err), ZapBsonM("query", query))
+		err = errors.New("根据id获取订单失败")
+		return
+	}
+	if len(orders) == 0 {
+		err = fmt.Errorf("未找到ID为%d的订单", ids)
+		return
+	}
+	return
+}
 
-		return nil, NewErrIDNotFound(id)
-	} else {
-		return orders[0], nil
+func (oc *OrderClient) FindOrderByTradeParentID(ctx context.Context, tradeParentID []string) (orders []*model.Order, err error) {
+	query := bson.M{
+		model.TradeParentIDField: bson.M{IN: tradeParentID},
 	}
+
+	orders, _, err = oc.queryOrder(ctx, query, nil, 0, 0, nil, nil)
+	if err != nil {
+		oc.Logger.Error("FindOrderByTradeParentID", zap.Error(err), ZapBsonM("query", query))
+		err = errors.New("根据淘宝订单号获取订单失败")
+		return
+	}
+	if len(orders) == 0 {
+		err = NewErrTradeParentIDNotFound(tradeParentID)
+		return
+	}
+	return
+}
+func (d *dao) FindOneAndUpdateCommission(ctx context.Context, id string, order *model.Order) (err error) {
+	filter := bson.M{
+		model.IDField:      id,
+		model.DeletedField: false,
+		model.SalaryField:  bson.M{LTE: 0},
+	}
+	update := bson.M{
+		SET: bson.M{
+			model.CommissionField:  order.Commission,
+			model.SalaryField:      order.Salary,
+			model.EarningTimeField: order.EarningTime,
+			model.StatusField:      order.Status,
+			model.UpdateTimeField:  tools.Now(),
+		},
+	}
+	option := options.FindOneAndUpdate().SetReturnDocument(options.Before)
+	singleResult := d.orderClient.collections[model.DBOrderKey].FindOneAndUpdate(ctx, filter, update, option)
+	err = singleResult.Err()
+	if err != nil && err != mongo.ErrNoDocuments {
+		d.logger.Error("结算佣金更新错误", zap.Error(err))
+		return err
+	}
+	v := &model.Order{}
+	err = singleResult.Decode(v)
+	if err != nil {
+		return err
+	}
+	if v.Salary != 0 {
+		return fmt.Errorf("FindOneAndUpdateCommission 有人在此次更新之前更新了一遍,id: %s", id)
+	}
+	return nil
 }
 
 func (oc *OrderClient) queryOrder(ctx context.Context, query bson.M, sort []string, start, limit int64, include, exclude []string, collations ...*options.Collation) (records []*model.Order, count int64, err error) {

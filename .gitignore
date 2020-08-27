@@ -17,3 +17,6 @@
 .vscode/
 ./logs/
 ./configs/application.toml
+./configs/db.toml
+./configs/redis.toml
+./test/db.toml

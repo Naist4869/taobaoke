@@ -477,7 +477,7 @@ type TbkDgMaterialOptionalReq struct {
 	// Ip 13.2.33.4    ip参数影响邮费获取，如果不传或者传入不准确，邮费无法精准提供
 	Ip string `json:"ip,omitempty"`
 	// AdzoneId 12345678 mm_xxx_xxx_12345678三段式的最后一段数字
-	AdzoneId int `json:"adzone_id"`
+	AdzoneId int64 `json:"adzone_id"`
 	// NeedFreeShipment true 商品筛选-是否包邮。true表示包邮，false或不设置表示不限
 	NeedFreeShipment bool `json:"need_free_shipment,omitempty"`
 	// NeedPrepay true 商品筛选-是否加入消费者保障。true表示加入，false或不设置表示不限
@@ -758,9 +758,9 @@ type ServiceFeeDto struct {
 // TbkOrderDetailsGetResult 淘宝客-推广者-所有订单查询
 type TbkOrderDetailsGetResult struct {
 	// TbPaidTime 2019-04-22 15:15:05	订单在淘宝拍下付款的时间
-	TbPaidTime string `json:"tb_paid_time"`
+	TbPaidTime Time `json:"tb_paid_time"`
 	// TkPaidTime 2019-04-22 15:15:05	订单付款的时间，该时间同步淘宝，可能会略晚于买家在淘宝的订单创建时间
-	TkPaidTime string `json:"tk_paid_time"`
+	TkPaidTime Time `json:"tk_paid_time"`
 	// PayPrice 9.11	买家确认收货的付款金额（不包含运费金额）
 	PayPrice string `json:"pay_price"`
 	// PubShareFee 0 结算预估收入=结算金额*提成。以买家确认收货的付款金额为基数，预估您可能获得的收入。因买家退款、您违规推广等原因，可能与您最终收入不一致。最终收入以月结后您实际收到的为准
@@ -770,7 +770,7 @@ type TbkOrderDetailsGetResult struct {
 	// TkOrderRole 	2	二方：佣金收益的第一归属者； 三方：从其他淘宝客佣金中进行分成的推广者
 	TkOrderRole int `json:"tk_order_role"`
 	// TkEarningTime 2019-04-22 15:15:05	订单确认收货后且商家完成佣金支付的时间
-	TkEarningTime string `json:"tk_earning_time"`
+	TkEarningTime Time `json:"tk_earning_time"`
 	// AdzoneID 11	推广位管理下的推广位名称对应的ID，同时也是pid=mm_1_2_3中的“3”这段数字
 	AdzoneID int64 `json:"adzone_id"`
 	// PubShareRate 100	从结算佣金中分得的收益比率
@@ -814,7 +814,7 @@ type TbkOrderDetailsGetResult struct {
 	// OrderType 如意淘	订单所属平台类型，包括天猫、淘宝、聚划算等
 	OrderType string `json:"order_type"`
 	// TkCreateTime 2019-04-22 15:15:05	订单创建的时间，该时间同步淘宝，可能会略晚于买家在淘宝的订单创建时间
-	TkCreateTime string `json:"tk_create_time"`
+	TkCreateTime Time `json:"tk_create_time"`
 	// FlowSource 	--	产品类型
 	FlowSource string `json:"flow_source"`
 	// TerminalType 无线	成交平台
@@ -851,13 +851,10 @@ type TbkOrderDetailsGetResult struct {
 	SpecialID int64 `json:"special_id"`
 	// RelationID 123123	渠道关系id
 	RelationID int64 `json:"relation_id"`
-	// TkDepositTime 22.32	预售时期，用户对预售商品支付的定金金额
-	TkDepositTime string `json:"tk_deposit_time"`
-	// TbDepositTime 	2019-09-09 12:01:01	预售时期，用户对预售商品支付定金的付款时间
-	TbDepositTime string `json:"tb_deposit_time"`
-	// DepositPrice 应该是预售金额
+	// DepositPrice 22.32	预售金额，用户对预售商品支付的定金金额
 	DepositPrice string `json:"deposit_price"`
-	AppKey       string `json:"app_key"`
+	// TbDepositTime 	2019-09-09 12:01:01	预售时期，用户对预售商品支付定金的付款时间
+	TbDepositTime Time `json:"tb_deposit_time"`
 	// AlscID 32434	口碑子订单号
 	AlscID string `json:"alsc_id"`
 	// AlscPid 	3434	口碑父订单号

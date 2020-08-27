@@ -73,7 +73,7 @@ func InitApp() (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	orders := service.NewOrders(logger)
+	orders := service.NewOrders(daoDao, logger)
 	serviceService, cleanup8, err := service.New(daoDao, logger, blademasterClient, orders)
 	if err != nil {
 		cleanup7()

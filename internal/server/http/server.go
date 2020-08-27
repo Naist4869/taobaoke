@@ -4,7 +4,9 @@ import (
 	"html/template"
 	"net/http"
 	"path"
+	"strconv"
 	"taobaoke/internal/service"
+	"taobaoke/tools"
 
 	pb "taobaoke/api"
 	"taobaoke/internal/model"
@@ -53,39 +55,60 @@ func initRouter(e *bm.Engine) {
 	e.GET(path.Join("/js", "/*filepath"), createStaticHandler("/js", http.Dir("res/js")))
 	e.HEAD(path.Join("/js", "/*filepath"), createStaticHandler("/js", http.Dir("res/js")))
 
-	e.GET("/item/:id", item)
+	e.GET("/item/:adZoneID/:itemID/:ID", item)
 }
 
 func item(c *bm.Context) {
-	id := c.Params.ByName("id")
-	title, picURL, shopName, err := svr.QueryTitleByItemID(c, id)
+	itemID, err := strconv.ParseInt(c.Params.ByName("itemID"), 10, 64)
 	if err != nil {
-		log.Error("get Title by id failed, err: %v", err)
+		http.NotFound(c.Writer, c.Request)
 		return
 	}
-	tkl, err := svr.GetTKL(c, title, picURL, id)
+	adZoneID, err := strconv.ParseInt(c.Params.ByName("adZoneID"), 10, 64)
 	if err != nil {
-		log.Error("get tkl failed, err: %v", err)
+		http.NotFound(c.Writer, c.Request)
+		return
+	}
+	id, ok := c.Params.Get("ID")
+	if !ok {
+		http.NotFound(c.Writer, c.Request)
 		return
 	}
 
-	trendInfo, err := svr.PriceTrend(c, id)
+	order, err := svr.UnmatchGet(c, itemID, adZoneID)
 	if err != nil {
-		log.Error("get trendInfo failed, err: %v", err)
+		http.NotFound(c.Writer, c.Request)
 		return
 	}
-
+	if order.ID != id {
+		http.NotFound(c.Writer, c.Request)
+		return
+	}
+	if !order.TrendInfo.EffectiveDate.SameDay(tools.Now()) {
+		if trendInfo, err := svr.PriceTrend(c, itemID); err != nil {
+			log.Error("item get trendInfo error: %+v", err)
+		} else {
+			order.TrendInfo = trendInfo
+		}
+		if tkl, err := svr.GetTKL(c, order.Title, order.PicURL, order.AdzoneID); err != nil {
+			log.Error("item get tkl failed, err: %v,title: %s, picURL: %s, adZoneID: %d", err, order.Title, order.PicURL, order.AdzoneID)
+		} else {
+			order.TrendInfo.TKL = tkl
+		}
+		svr.SetToUnmatch(c, order.ItemID, order.AdzoneID, order)
+	}
 	t := template.Must(template.New("item.tmpl").Delims("{{", "}}").ParseFiles("./res/item.tmpl"))
 	err = t.Execute(c.Writer, map[string]interface{}{
-		"title":     title,
-		"picURL":    picURL,
-		"tkl":       tkl,
-		"shopName":  shopName,
+		"title":     order.Title,
+		"picURL":    order.PicURL,
+		"tkl":       order.TrendInfo.TKL,
+		"shopName":  order.ShopName,
 		"ngrok":     service.Ngrok,
-		"trendInfo": trendInfo,
+		"trendInfo": order.TrendInfo,
 	})
 	if err != nil {
 		log.Error("render template failed, err: %v", err)
+		http.NotFound(c.Writer, c.Request)
 		return
 	}
 }

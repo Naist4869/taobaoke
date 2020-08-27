@@ -96,6 +96,17 @@ func (i TbkItemInfoGetReq) Query(queryMap map[string]string) {
 		queryMap["platform"] = strconv.Itoa(i.Platform)
 	}
 }
+
+func (t *tbkitemInfoGetResp) Error() error {
+	if e := t.RespCommon.Error(); e != nil {
+		return e
+	}
+	if len(t.ItemInfoGetResponse.Results.TbkItemInfoGetResults) == 0 {
+		return errors.New("查询列表为空")
+	}
+	return nil
+}
+
 func (t TbkTpwdCreateReq) Code() int {
 	return tbkTpwdCreateCode
 }
@@ -134,7 +145,7 @@ func (t TbkDgMaterialOptionalReq) Name() string {
 }
 
 func (t TbkDgMaterialOptionalReq) Query(queryMap map[string]string) {
-	queryMap["adzone_id"] = strconv.Itoa(t.AdzoneId)
+	queryMap["adzone_id"] = fmt.Sprintf("%d", t.AdzoneId)
 	if t.StartDsr != 0 {
 		queryMap["start_dsr"] = strconv.Itoa(t.StartDsr)
 	}
@@ -238,6 +249,17 @@ func (t TbkDgMaterialOptionalReq) Query(queryMap map[string]string) {
 		queryMap["seller_ids"] = t.SellerIds
 	}
 }
+
+func (t *tbkDgMaterialOptionalResp) Error() error {
+	if e := t.RespCommon.Error(); e != nil {
+		return e
+	}
+	if t.TbkDgMaterialOptionalResponse.TotalResults == 0 {
+		return NewQueryListEmptyError()
+	}
+	return nil
+}
+
 func (t TbkOrderDetailsGetReq) Code() int {
 	return tbkOrderDetailsGetCode
 }
@@ -283,7 +305,7 @@ func (t *tbkOrderDetailsGetResp) Error() error {
 		return e
 	}
 	if len(t.TbkOrderDetailsGetResponse.Data.Results.TbkOrderDetailsGetResults) == 0 {
-		return errors.New("查询列表为空")
+		return NewQueryListEmptyError()
 	}
 	return nil
 }

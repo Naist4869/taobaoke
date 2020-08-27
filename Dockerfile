@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine as builder
+FROM golang:1.15-alpine as builder
 
 ENV GOPROXY=https://goproxy.io
 
@@ -34,3 +34,5 @@ RUN chmod +x ./taobaoke
 ENTRYPOINT ["./taobaoke","-conf","configs"]
 
 #docker build --build-arg VERSION=$(echo "$(git symbolic-ref --short -q HEAD)-$(git rev-parse HEAD)"),BUILD=$(date +%FT%T%z) -t naist4869/taobaoke --network=host .
+#docker run -d  -p 80:12341 -p 1241:1241 -v /usr/src/logs:/app/logs --name=taobaoke  --restart=on-failure:3 naist4869/taobaoke:latest
+#docker run -d --name redis -p 6379:6379 -e REDIS_PASSWORD=password123 --network 05f60dca5a22 bitnami/redis

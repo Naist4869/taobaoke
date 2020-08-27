@@ -25,8 +25,11 @@ service TBK {
 //  };
   rpc TitleConvertTBKey(TitleConvertTBKeyReq) returns(TitleConvertTBKeyResp);
   rpc KeyConvertKey(KeyConvertKeyReq) returns(KeyConvertKeyResp);
+  rpc WithDraw(WithDrawReq)returns(WithDrawResp);
 }
-
+service Wechat{
+  rpc TemplateMsgSend(TemplateMsgSendReq) returns(.google.protobuf.Empty);
+}
 message HelloReq {
   string name = 1 [(gogoproto.moretags) = 'form:"name" validate:"required"'];
 }
@@ -54,4 +57,21 @@ message KeyConvertKeyResp{
   string Title=5;
   string PicURL=6;
   string ItemURL=7;
+}
+
+message TemplateMsgSendReq{
+  string userID = 1;
+  string orderID =2;
+  string title =3;
+  string paidTime =4;
+  string alipayTotalPrice=5;
+  string rebate = 6;
+}
+
+message WithDrawReq{
+  string userID = 1;
+}
+message WithDrawResp{
+  string Rebate =1;
+  repeated string OrderIDs =2;
 }

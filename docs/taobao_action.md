@@ -379,7 +379,7 @@ Name|Type|JSON|Doc
 | `MaterialId`        | `int`    | `material_id,omitempty`          | 2836 不传时默认物料id=2836；如果直接对消费者投放，可使用官方个性化算法优化的搜索物料id=17004                                                                              |
 | `HasCoupon`         | `bool`   | `has_coupon,omitempty`           | false    优惠券筛选-是否有优惠券。true表示该商品有优惠券，false或不设置表示不限                                                                                           |
 | `Ip`                | `string` | `ip,omitempty`                   | 13.2.33.4    ip参数影响邮费获取，如果不传或者传入不准确，邮费无法精准提供                                                                                                 |
-| `AdzoneId`          | `int`    | `adzone_id`                      | 12345678 mm_xxx_xxx_12345678三段式的最后一段数字                                                                                                                          |
+| `AdzoneId`          | `int64`    | `adzone_id`                      | 12345678 mm_xxx_xxx_12345678三段式的最后一段数字                                                                                                                          |
 | `NeedFreeShipment`  | `bool`   | `need_free_shipment,omitempty`   | true 商品筛选-是否包邮。true表示包邮，false或不设置表示不限                                                                                                               |
 | `NeedPrepay`        | `bool`   | `need_prepay,omitempty`          | true 商品筛选-是否加入消费者保障。true表示加入，false或不设置表示不限                                                                                                     |
 | `IncludePayRate30`  | `bool`   | `include_pay_rate_30,omitempty`  | true 商品筛选(特定媒体支持)-成交转化是否高于行业均值。True表示大于等于，false或不设置表示不限                                                                             |
@@ -561,13 +561,13 @@ Name|Type|JSON|Doc
 ### `TbkOrderDetailsGetResult` 淘宝客-推广者-所有订单查询
 Name|Type|JSON|Doc
 :---|:---|:---|:--
-`TbPaidTime                        `|` string            `|`tb_paid_time`                             |2019-04-22 15:15:05	订单在淘宝拍下付款的时间
-`TkPaidTime                        `|` string            `|`tk_paid_time`                             | 2019-04-22 15:15:05	订单付款的时间，该时间同步淘宝，可能会略晚于买家在淘宝的订单创建时间
+`TbPaidTime                        `|` Time            `|`tb_paid_time`                             |2019-04-22 15:15:05	订单在淘宝拍下付款的时间
+`TkPaidTime                        `|` Time            `|`tk_paid_time`                             | 2019-04-22 15:15:05	订单付款的时间，该时间同步淘宝，可能会略晚于买家在淘宝的订单创建时间
 `PayPrice                          `|` string            `|`pay_price`                                | 9.11	买家确认收货的付款金额（不包含运费金额）
 `PubShareFee                       `|` string            `|`pub_share_fee`                            | 0 结算预估收入=结算金额*提成。以买家确认收货的付款金额为基数，预估您可能获得的收入。因买家退款、您违规推广等原因，可能与您最终收入不一致。最终收入以月结后您实际收到的为准
 `TradeID                           `|` string            `|`trade_id`                                 | 294159887445064307	买家通过购物车购买的每个商品对应的订单编号，此订单编号并未在淘宝买家后台透出
 `TkOrderRole                       `|` int               `|`tk_order_role`                            | 	2	二方：佣金收益的第一归属者； 三方：从其他淘宝客佣金中进行分成的推广者
-`TkEarningTime                     `|` string            `|`tk_earning_time`                          | 2019-04-22 15:15:05	订单确认收货后且商家完成佣金支付的时间
+`TkEarningTime                     `|` Time            `|`tk_earning_time`                          | 2019-04-22 15:15:05	订单确认收货后且商家完成佣金支付的时间
 `AdzoneID                          `|` int64             `|`adzone_id`                                | 11	推广位管理下的推广位名称对应的ID，同时也是pid=mm_1_2_3中的“3”这段数字
 `PubShareRate                      `|` string            `|`pub_share_rate`                           | 100	从结算佣金中分得的收益比率
 `Unid                              `|` string            `|`unid`                                     | 11	unid
@@ -589,7 +589,7 @@ Name|Type|JSON|Doc
 `AlimamaShareFee                   `|` string            `|`alimama_share_fee`                        | 0	技术服务费=结算金额*收入比率*技术服务费率。推广者赚取佣金后支付给阿里妈妈的技术服务费用
 `TradeParentID                     `|` string            `|`trade_parent_id`                          | 294159887445064307	买家在淘宝后台显示的订单编号
 `OrderType                         `|` string            `|`order_type`                               | 如意淘	订单所属平台类型，包括天猫、淘宝、聚划算等
-`TkCreateTime                      `|` string            `|`tk_create_time`                           | 2019-04-22 15:15:05	订单创建的时间，该时间同步淘宝，可能会略晚于买家在淘宝的订单创建时间
+`TkCreateTime                      `|` Time            `|`tk_create_time`                           | 2019-04-22 15:15:05	订单创建的时间，该时间同步淘宝，可能会略晚于买家在淘宝的订单创建时间
 `FlowSource                        `|` string            `|`flow_source`                              | 	--	产品类型
 `TerminalType                      `|` string            `|`terminal_type`                            | 无线	成交平台
 `ClickTime                         `|` Time            `|`click_time`                               | 2019-04-22 15:14:55	通过推广链接达到商品、店铺详情页的点击时间
@@ -608,10 +608,8 @@ Name|Type|JSON|Doc
 `TkCommissionRateForMediaPlatform  `|` string            `|`tk_commission_rate_for_media_platform`    | 0.01	内容专项服务费率：内容场景专项技术服务费率，内容推广者在内容场景进行推广需要按结算金额支付一定比例给阿里妈妈作为内容场景专项技术服务费，用于提供与内容平台实现产品技术对接等服务。
 `SpecialID                         `|` int64             `|`special_id`                               | 	21321	会员运营id
 `RelationID                        `|` int64             `|`relation_id`                              | 123123	渠道关系id
-`TkDepositTime                     `|` string            `|`tk_deposit_time`                          | 22.32	预售时期，用户对预售商品支付的定金金额
-`TbDepositTime                     `|` string            `|`tb_deposit_time`                          | 	2019-09-09 12:01:01	预售时期，用户对预售商品支付定金的付款时间
-`DepositPrice                      `|` string            `|`deposit_price`                            | 应该是预售金额
-`AppKey                            `|` string            `|`app_key`|
+`DepositPrice                     `|` string            `|`deposit_price`                          | 22.32	预售金额，用户对预售商品支付的定金金额
+`TbDepositTime                     `|` Time            `|`tb_deposit_time`                          | 	2019-09-09 12:01:01	预售时期，用户对预售商品支付定金的付款时间
 `AlscID                            `|` string            `|`alsc_id`             | 32434	口碑子订单号
 `AlscPid                           `|` string            `|`alsc_pid`            |  	3434	口碑父订单号
 `ServiceFeeDtoList                 `|` ServiceFeeDtoList `|`service_fee_dto_list`| 	服务费信息

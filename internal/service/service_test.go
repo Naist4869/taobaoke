@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"regexp"
 	pb "taobaoke/api"
+	"taobaoke/internal/model"
 	"taobaoke/tools"
 	"testing"
 	"time"
@@ -97,7 +99,8 @@ func TestMain(m *testing.M) {
 
 func TestService_ItemInfoGet(t *testing.T) {
 	result, err := testService.execTbkItemInfoGet(ctx, TbkItemInfoGetReq{
-		NumIDs: "603587505846",
+		NumIDs:   "603587505846",
+		Platform: 2,
 	})
 	require.NoError(t, err)
 	spew.Dump(result)
@@ -115,9 +118,9 @@ func TestService_TbkTpwdCreate(t *testing.T) {
 	spew.Dump(result)
 }
 func TestService_TbkDgMaterialOptional(t *testing.T) {
-	adzoneID := testService.GetadzoneID()
+
 	testService.execTbkDgMaterialOptional(ctx, TbkDgMaterialOptionalReq{
-		AdzoneId: int(adzoneID),
+		AdzoneId: 110790300374,
 		Q:        "华为5G CPE Pro 无线路由器千兆端口双宽带插卡5G全网通随身WiFi\n",
 	})
 }
@@ -172,10 +175,15 @@ func TestService_HighCommission(t *testing.T) {
 }
 
 func TestService_QueryOrder(t *testing.T) {
-	now := tools.Now()
+	parseTime, err := tools.ParseTimeInLength("2020-06-27 12:14:32")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	result, err := testService.execTbkOrderDetailsGet(ctx, TbkOrderDetailsGetReq{
-		StartTime: now.Add(-time.Hour),
-		EndTime:   now,
+		QueryType: 2,
+		StartTime: parseTime,
+		EndTime:   parseTime,
 	})
 	require.NoError(t, err)
 	t.Logf("%#v", result)
@@ -216,7 +224,7 @@ func TestService_analyzingKey(t *testing.T) {
 }
 
 func TestService_ConvertMyKey(t *testing.T) {
-	key, err := testService.keyConvertKey(ctx, "₴amEKcX3FfiF₴")
+	key, err := testService.keyConvertKey(ctx, "₳bdoBc2kfTAS₳", testService.GetdefultAdzoneID())
 	require.NoError(t, err)
 	spew.Dump(key)
 }
@@ -234,4 +242,82 @@ func TestRegexp2(t *testing.T) {
 	re := regexp.MustCompile(`"data":{"st":"(.[^\"]*)`)
 	matches := re.FindSubmatch(test2)
 	fmt.Printf("%s", matches[1])
+}
+func TestOrders_TemplateMsgSend(t *testing.T) {
+	testService.orders.TemplateMsgSend(ctx, &pb.TemplateMsgSendReq{
+		UserID:           "oqeBd0fGbtYTmoVGhHzZ5Nf3-Egc",
+		OrderID:          "043HR",
+		Title:            "Julia编程基础",
+		PaidTime:         tools.Now().String(),
+		AlipayTotalPrice: "12.8",
+		Rebate:           "0.12",
+	})
+}
+
+// -race 测试通过
+func TestService_WithDraw(t *testing.T) {
+	text := `{
+    "orders": [
+        {
+            "paid_time": "2020-06-30 14:44:15",
+            "trade_parent_id": "1093949954060945186"
+        },
+        {
+            "paid_time": "2020-06-29 13:45:39",
+            "trade_parent_id": "1092126338847747471"
+        },
+        {
+            "paid_time": "2020-06-29 13:40:11",
+            "trade_parent_id": "1091523488582747471"
+        },
+        {
+            "paid_time": "2020-06-27 12:14:32",
+            "trade_parent_id": "1088049344508740781"
+        },
+        {
+            "paid_time": "2020-06-16 11:02:58",
+            "trade_parent_id": "1065911329613747471"
+        },
+        {
+            "paid_time": "2020-06-11 09:19:47",
+            "trade_parent_id": "1054723971619972844"
+        },
+        {
+            "paid_time": "2020-06-11 07:34:42",
+            "trade_parent_id": "1053946560561568653"
+        },
+        {
+            "paid_time": "2020-06-10 04:21:44",
+            "trade_parent_id": "1052810275721747471"
+        }
+    ]
+}
+`
+	v := new(struct {
+		Orders []struct {
+			PaidTime      tools.Time `json:"paid_time"`
+			TradeParentID string     `json:"trade_parent_id"`
+		} `json:"orders"`
+	})
+	err := json.Unmarshal([]byte(text), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var orders []*model.Order
+	for _, item := range v.Orders {
+		orders = append(orders, &model.Order{
+			PaidTime:      item.PaidTime,
+			TradeParentID: item.TradeParentID,
+		})
+	}
+
+	results, err := testService.QueryRemoteOrderByTradeParentID(ctx, orders)
+	if err != nil {
+		t.Fatal(err)
+	}
+	results.Range(func(key, value interface{}) bool {
+		t.Logf("%s: %v", key.(string), value.(TbkOrderDetailsGetResult))
+		return true
+	})
+
 }

@@ -12,7 +12,7 @@ func newTestDao() (*dao, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	redis, cleanup2, err := NewRedis()
+	client, cleanup2, err := NewRedis()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -30,7 +30,7 @@ func newTestDao() (*dao, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	client, cleanup5, err := NewMongo()
+	mongoClient, cleanup5, err := NewMongo()
 	if err != nil {
 		cleanup4()
 		cleanup3()
@@ -38,7 +38,7 @@ func newTestDao() (*dao, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	orderClient, err := NewOrderClient(client, logger)
+	orderClient, err := NewOrderClient(mongoClient, logger)
 	if err != nil {
 		cleanup5()
 		cleanup4()
@@ -47,7 +47,7 @@ func newTestDao() (*dao, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	daoDao, cleanup6, err := newDao(logger, redis, memcache, db, client, orderClient)
+	daoDao, cleanup6, err := newDao(logger, client, memcache, db, mongoClient, orderClient)
 	if err != nil {
 		cleanup5()
 		cleanup4()

@@ -13,13 +13,14 @@ import (
 const AppID = "TODO: ADD APP ID"
 
 // NewClient new grpc client
-func NewClient(cfg *warden.ClientConfig, opts ...grpc.DialOption) (TBKClient, error) {
+//  27.155.87.89
+func NewClient(cfg *warden.ClientConfig, opts ...grpc.DialOption) (WechatClient, error) {
 	client := warden.NewClient(cfg, opts...)
-	cc, err := client.Dial(context.Background(), fmt.Sprintf("discovery://default/%s", AppID))
+	cc, err := client.Dial(context.Background(), fmt.Sprintf("direct://default/27.155.87.89:56285"))
 	if err != nil {
 		return nil, err
 	}
-	return NewTBKClient(cc), nil
+	return NewWechatClient(cc), nil
 }
 
 // 生成 gRPC 代码

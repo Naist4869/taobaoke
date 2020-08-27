@@ -10,14 +10,16 @@ require (
 	github.com/extrame/xls v0.0.1
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/go-kratos/kratos v0.5.1-0.20200526160825-521d240568d0
-	github.com/go-redis/redis/v8 v8.0.0-beta.5 // indirect
+	github.com/go-redis/redis/v8 v8.0.0-beta.5
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.3.5
 	github.com/google/wire v0.4.0
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/prometheus/client_golang v1.5.1
 	github.com/russross/blackfriday/v2 v2.0.1
+	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726
 	github.com/stretchr/testify v1.5.1
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf
 	github.com/urfave/cli/v2 v2.2.0 // indirect

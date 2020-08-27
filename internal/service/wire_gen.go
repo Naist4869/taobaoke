@@ -16,7 +16,7 @@ func newTestService() (*Service, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	redis, cleanup2, err := dao.NewRedis()
+	client, cleanup2, err := dao.NewRedis()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -34,7 +34,7 @@ func newTestService() (*Service, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	client, cleanup5, err := dao.NewMongo()
+	mongoClient, cleanup5, err := dao.NewMongo()
 	if err != nil {
 		cleanup4()
 		cleanup3()
@@ -42,7 +42,7 @@ func newTestService() (*Service, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	orderClient, err := dao.NewOrderClient(client, logger)
+	orderClient, err := dao.NewOrderClient(mongoClient, logger)
 	if err != nil {
 		cleanup5()
 		cleanup4()
@@ -51,7 +51,7 @@ func newTestService() (*Service, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	daoDao, cleanup6, err := dao.New(logger, redis, memcache, db, client, orderClient)
+	daoDao, cleanup6, err := dao.New(logger, client, memcache, db, mongoClient, orderClient)
 	if err != nil {
 		cleanup5()
 		cleanup4()
@@ -70,7 +70,7 @@ func newTestService() (*Service, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	serviceOrders := NewOrders(logger)
+	serviceOrders := NewOrders(daoDao, logger)
 	service, cleanup8, err := New(daoDao, logger, blademasterClient, serviceOrders)
 	if err != nil {
 		cleanup7()

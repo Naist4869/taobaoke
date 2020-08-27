@@ -1,6 +1,6 @@
 [bm]
     [bm.server]
-        addr = "0.0.0.0:1242"
+        addr = "0.0.0.0:12341"
         timeout = "5s"
     [bm.client]
         dial = "1000ms"

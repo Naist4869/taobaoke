@@ -28,6 +28,9 @@ var _ binding.StructValidator
 var PathTBKPing = "/demo.service.v1.TBK/Ping"
 var PathTBKTitleConvertTBKey = "/demo.service.v1.TBK/TitleConvertTBKey"
 var PathTBKKeyConvertKey = "/demo.service.v1.TBK/KeyConvertKey"
+var PathTBKWithDraw = "/demo.service.v1.TBK/WithDraw"
+
+var PathWechatTemplateMsgSend = "/demo.service.v1.Wechat/TemplateMsgSend"
 
 // TBKBMServer is the server API for TBK service.
 type TBKBMServer interface {
@@ -42,6 +45,8 @@ type TBKBMServer interface {
 	TitleConvertTBKey(ctx context.Context, req *TitleConvertTBKeyReq) (resp *TitleConvertTBKeyResp, err error)
 
 	KeyConvertKey(ctx context.Context, req *KeyConvertKeyReq) (resp *KeyConvertKeyResp, err error)
+
+	WithDraw(ctx context.Context, req *WithDrawReq) (resp *WithDrawResp, err error)
 }
 
 var TBKSvc TBKBMServer
@@ -73,10 +78,42 @@ func tBKKeyConvertKey(c *bm.Context) {
 	c.JSON(resp, err)
 }
 
+func tBKWithDraw(c *bm.Context) {
+	p := new(WithDrawReq)
+	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
+		return
+	}
+	resp, err := TBKSvc.WithDraw(c, p)
+	c.JSON(resp, err)
+}
+
 // RegisterTBKBMServer Register the blademaster route
 func RegisterTBKBMServer(e *bm.Engine, server TBKBMServer) {
 	TBKSvc = server
 	e.GET("/demo.service.v1.TBK/Ping", tBKPing)
 	e.GET("/demo.service.v1.TBK/TitleConvertTBKey", tBKTitleConvertTBKey)
 	e.GET("/demo.service.v1.TBK/KeyConvertKey", tBKKeyConvertKey)
+	e.GET("/demo.service.v1.TBK/WithDraw", tBKWithDraw)
+}
+
+// WechatBMServer is the server API for Wechat service.
+type WechatBMServer interface {
+	TemplateMsgSend(ctx context.Context, req *TemplateMsgSendReq) (resp *google_protobuf1.Empty, err error)
+}
+
+var WechatSvc WechatBMServer
+
+func wechatTemplateMsgSend(c *bm.Context) {
+	p := new(TemplateMsgSendReq)
+	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
+		return
+	}
+	resp, err := WechatSvc.TemplateMsgSend(c, p)
+	c.JSON(resp, err)
+}
+
+// RegisterWechatBMServer Register the blademaster route
+func RegisterWechatBMServer(e *bm.Engine, server WechatBMServer) {
+	WechatSvc = server
+	e.GET("/demo.service.v1.Wechat/TemplateMsgSend", wechatTemplateMsgSend)
 }

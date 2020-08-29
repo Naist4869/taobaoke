@@ -121,8 +121,12 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 			o.logger.Info("订单本地不存在，跳过")
 			continue
 		}
+		if model.OrderStatus(remoteOrder.TkStatus).Failed() {
+			o.logger.Info("发现已失效订单，跳过", zap.Any("远程订单", remoteOrder))
+			continue
+		}
 		if remoteOrder.AlipayTotalPrice == "" {
-			o.logger.Info("订单还没有付款金额，跳过")
+			o.logger.Info("订单还没有付款金额，跳过", zap.Any("远程订单", remoteOrder))
 			continue
 		}
 		localOrder, err := o.dao.GetUnmatch(context.Background(), remoteOrder.ItemID, remoteOrder.AdzoneID)

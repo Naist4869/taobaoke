@@ -114,9 +114,9 @@ func (oc *OrderClient) Init(client *mongo.Client, db string) error {
 		}
 		if err := gdbc.EnsureIndex(collection, []gdbc.Index{
 			{
-				Name: "用户ID",
+				Name: "订单ID",
 				Data: mongo.IndexModel{
-					Keys:    bson.M{model.UserIDField: 1},
+					Keys:    bson.M{model.IDField: 1},
 					Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{model.DeletedField: false}),
 				},
 				Version: 1,
@@ -139,8 +139,8 @@ func (oc *OrderClient) Insert(ctx context.Context, o *model.Order) (err error) {
 	if _, err = oc.collections[model.DBOrderKey].InsertOne(ctx, *o); err != nil {
 		if IsInsertDuplicateError(err) {
 			errMsg := err.Error()
-			strings.Contains(errMsg, "index: 用户ID")
-			err = errors.New("用户ID已存在")
+			strings.Contains(errMsg, "index: 订单ID")
+			err = errors.New("订单ID已存在")
 			return
 		}
 		err = errors.New("保存订单信息失败")

@@ -58,6 +58,9 @@ func (s OrderStatus) Finish() bool {
 func (s OrderStatus) Balance() bool {
 	return s == OrderBalance
 }
+func (s OrderStatus) Failed() bool {
+	return s == OrderFailed
+}
 
 type Order struct {
 	ID               string      `bson:"_id" json:"id"`                                // 对外显示的订单编号

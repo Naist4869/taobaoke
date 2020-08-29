@@ -135,13 +135,13 @@ func TestService_HighCommission(t *testing.T) {
 }
 
 func TestService_QueryOrder(t *testing.T) {
-	parseTime, err := tools.ParseTimeInLength("2020-06-27 12:14:32")
+	parseTime, err := tools.ParseTimeInLength("2020-08-28 00:21:28")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	result, err := testService.execTbkOrderDetailsGet(ctx, TbkOrderDetailsGetReq{
-		QueryType: 2,
+		QueryType: 1,
 		StartTime: parseTime,
 		EndTime:   parseTime,
 	})

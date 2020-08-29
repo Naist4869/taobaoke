@@ -210,6 +210,7 @@ func (s *Service) Monitor() {
 // 状态变更监控
 func (s *Service) MonitorMarch() {
 	for range time.Tick(time.Hour) {
+
 		ctx := context.Background()
 		orders, err := s.dao.MatchGetAll(ctx)
 		if err != nil {
@@ -232,6 +233,7 @@ func (s *Service) MonitorMarch() {
 			remoteOrder := value.(TbkOrderDetailsGetResult)
 			localOrder := ordersMap[id]
 			status := model.OrderStatus(remoteOrder.TkStatus)
+			s.logger.Info("MonitorMarch", zap.String("动作", "开始检测远程订单状态"), zap.Any("localOrder", localOrder), zap.Any("remoteOrder", remoteOrder))
 			if localOrder.Status != status {
 				s.logger.Info("MonitorMarch", zap.String("动作", "检测到远程订单状态变更"), zap.Any("本地订单", localOrder), zap.Any("远程订单", remoteOrder))
 				var err error
@@ -318,6 +320,9 @@ func (s *Service) QueryRemoteOrderByTradeParentID(ctx context.Context, orders []
 	group.GOMAXPROCS(30)
 	for _, order := range orders {
 		o := order
+		if o.PaidTime.IsZero() {
+			continue
+		}
 		group.Go(func(ctx context.Context) error {
 			result, err := s.execTbkOrderDetailsGet(ctx, TbkOrderDetailsGetReq{
 				QueryType: 2,

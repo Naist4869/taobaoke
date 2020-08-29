@@ -96,6 +96,7 @@ func (o *orders) Match(orders []TbkOrderDetailsGetResult) {
 
 func (o *orders) Add(ctx context.Context, order *model.Order, nonce string) (err error) {
 	o.logger.Info("添加本地订单记录", zap.Int64("渠道ID", order.AdzoneID), zap.String("用户ID", order.UserID), zap.Int64("商品ID", order.ItemID))
+
 	ok, err := o.dao.SetToUnmatch(ctx, order.ItemID, order.AdzoneID, order, nonce)
 	if err != nil || !ok {
 		err = fmt.Errorf("orders Add fail: %w", err)

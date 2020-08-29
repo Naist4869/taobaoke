@@ -144,13 +144,26 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 		return
 	}
 	nonce := tools.MakeNonce()
-	for ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce); err != nil || ok != true; adZoneID = getadZoneID() {
-		s.logger.Info("KeyConvert", zap.Error(err), zap.Bool("OK", ok), zap.Int64("新AdZoneID", adZoneID))
+	//for ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce); err != nil || ok != true; adZoneID = getadZoneID() {
+	//	s.logger.Info("KeyConvert", zap.Error(err), zap.Bool("OK", ok), zap.Int64("AdZoneID", adZoneID))
+	//	if adZoneID == 0 {
+	//		err = fmt.Errorf("请稍后再试:(%w)", err)
+	//		return nil, err
+	//	}
+	//	ok, err = s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
+	//}
+
+	for {
+		ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
+		if err != nil || ok != true {
+			adZoneID = getadZoneID()
+			continue
+		}
 		if adZoneID == 0 {
 			err = fmt.Errorf("请稍后再试:(%w)", err)
 			return nil, err
 		}
-		ok, err = s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
+		break
 	}
 
 	order := model.NewOrder(id, req.UserID, adZoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType, r.Price, r.ReservePrice, r.Coupon)

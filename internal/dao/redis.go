@@ -115,18 +115,24 @@ func (d *dao) SetNXToUnmatch(ctx context.Context, itemID, adZoneID int64, nonce 
 }
 func (d *dao) SetToUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order, nonce string) (ok bool, err error) {
 	key := unmatchKey(itemID, adZoneID)
+	defer func() {
+		if err != nil {
+			d.redis.Del(ctx, key)
+		}
+	}()
 	marshal, err := json.Marshal(order)
 	if err != nil {
 		return
 	}
 	old, err := d.redis.GetSet(ctx, key, marshal).Result()
 	if err != nil {
-		err = fmt.Errorf("conn.Do(Set, %s, %s) error(%v)", key, marshal, err)
+		err = fmt.Errorf("conn.Do(GetSet, %s, %s) error(%v)", key, marshal, err)
 		return
 	}
 
 	if strings.Compare(old, nonce) != 0 {
-		return false, nil
+		err = fmt.Errorf("nonce不匹配,old: %s,should: %s", old, nonce)
+		return
 	}
 
 	result, err := d.redis.Expire(ctx, key, time.Hour*24*10).Result()

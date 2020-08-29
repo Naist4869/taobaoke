@@ -71,10 +71,11 @@ func TestDao_QueryOrderByTradeParentID(t *testing.T) {
 }
 
 func TestDao_SetToUnmatch(t *testing.T) {
-	ok, err := d.SetNXToUnmatch(ctx, 123, 123, "444")
-	require.NoError(t, err)
-	require.True(t, ok)
-	ok, err = d.SetToUnmatch(ctx, 123, 123, &model.Order{}, "444")
+	//ok, err := d.SetNXToUnmatch(ctx, 123, 123, "444")
+	//require.NoError(t, err)
+	//require.True(t, ok)
+	//time.Sleep(time.Second * 6)
+	ok, err := d.SetToUnmatch(ctx, 123, 123, &model.Order{}, "444")
 	require.NoError(t, err)
 	require.True(t, ok)
 }

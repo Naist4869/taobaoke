@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>商品详情</title>
-    <link rel="stylesheet" href="{{- .ngrok -}}/css/item.css">
+    <link rel="stylesheet" href="{{- .serverAddr -}}/css/item.css">
 </head>
 <body>
 
@@ -16,15 +16,16 @@
     </p> <div class="price"><span class="price1">￥{{.trendInfo.OriginalPrice}}</span> <!----> <!----> <!----> <span class="site"><img src="https://cdn.gwdang.com/images/favicon/83.png" class="site-icon"> <span class="site-name">{{.shopName}}</span></span></div> <!----> <!----></div>    <div class="dp-trend"><div class="trend-head"><div class="status"><span class="icon icon-steady"></span> <span class="txt">
         {{.trendInfo.TrendMsg}}
     </span></div></div> <div class="maxmin"><div class="max">最高: ￥<span class="price-max">{{.trendInfo.MaxPrice}}</span></div> <div class="min">最低: ￥<span class="price-min">{{.trendInfo.MinPrice}}</span></div></div> <div id="trend" class="trend "><canvas id="canvas_trend" style="width: 100%; height: 300px;"></canvas></div></div>
+<div class="share" style="color: #FE4365;" ><h1>点击右上角可以分享给你的朋友</h1></div>
 <div class="bottom">
     <div class="clip-btn" onclick="buy()" >
         <div class="buy">去购买</div>
     </div>
 </div>
 
-<script src="{{- .ngrok -}}/js/jquery-3.5.1.min.js"></script>
-<script src="{{- .ngrok -}}/js/clipboard.js"></script>
-<script src="{{- .ngrok -}}/js/draw_trend.js"></script>
+<script src="{{- .serverAddr -}}/js/jquery-3.5.1.min.js"></script>
+<script src="{{- .serverAddr -}}/js/clipboard.js"></script>
+<script src="{{- .serverAddr -}}/js/draw_trend.js"></script>
 <script type="text/javascript">
     function buy(){
         let t, e, n, r;

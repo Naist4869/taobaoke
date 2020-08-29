@@ -8,6 +8,8 @@ import (
 	"taobaoke/internal/service"
 	"taobaoke/tools"
 
+	"github.com/go-kratos/kratos/pkg/net/http/blademaster/binding"
+
 	pb "taobaoke/api"
 	"taobaoke/internal/model"
 
@@ -45,7 +47,7 @@ func New(s service.Server) (engine *bm.Engine, err error) {
 
 func initRouter(e *bm.Engine) {
 	e.Ping(ping)
-	g := e.Group("/fileSystem")
+	g := e.Group("/taobaoke")
 	{
 		g.GET("/start", howToStart)
 	}
@@ -55,56 +57,63 @@ func initRouter(e *bm.Engine) {
 	e.GET(path.Join("/js", "/*filepath"), createStaticHandler("/js", http.Dir("res/js")))
 	e.HEAD(path.Join("/js", "/*filepath"), createStaticHandler("/js", http.Dir("res/js")))
 
-	e.GET("/item/:adZoneID/:itemID/:ID", item)
+	e.GET("/item", item)
 }
 
 func item(c *bm.Context) {
-	itemID, err := strconv.ParseInt(c.Params.ByName("itemID"), 10, 64)
-	if err != nil {
-		http.NotFound(c.Writer, c.Request)
-		return
-	}
-	adZoneID, err := strconv.ParseInt(c.Params.ByName("adZoneID"), 10, 64)
-	if err != nil {
-		http.NotFound(c.Writer, c.Request)
-		return
-	}
-	id, ok := c.Params.Get("ID")
-	if !ok {
+	v := new(struct {
+		ID       string `form:"id" binding:"required"`
+		ItemID   string `form:"itemID" binding:"required"`
+		AdZoneID string `form:"adZoneID" binding:"required"`
+	})
+
+	if err := c.BindWith(v, binding.Query); err != nil {
 		http.NotFound(c.Writer, c.Request)
 		return
 	}
 
+	itemID, err := strconv.ParseInt(v.ItemID, 10, 64)
+	if err != nil {
+		http.NotFound(c.Writer, c.Request)
+		return
+	}
+	adZoneID, err := strconv.ParseInt(v.AdZoneID, 10, 64)
+	if err != nil {
+		http.NotFound(c.Writer, c.Request)
+		return
+	}
 	order, err := svr.UnmatchGet(c, itemID, adZoneID)
 	if err != nil {
 		http.NotFound(c.Writer, c.Request)
 		return
 	}
-	if order.ID != id {
+	if order.ID != v.ID {
 		http.NotFound(c.Writer, c.Request)
 		return
 	}
 	if !order.TrendInfo.EffectiveDate.SameDay(tools.Now()) {
+		log.Info("重新设置淘口令,商品ID: %s,原口令:%s", order.ID, order.TrendInfo.TKL)
 		if trendInfo, err := svr.PriceTrend(c, itemID); err != nil {
 			log.Error("item get trendInfo error: %+v", err)
 		} else {
 			order.TrendInfo = trendInfo
 		}
-		if tkl, err := svr.GetTKL(c, order.Title, order.PicURL, order.AdzoneID); err != nil {
+		if tkl, _, _, err := svr.GetTklByItemID(c, order.ItemID, order.AdzoneID, order.Title); err != nil {
 			log.Error("item get tkl failed, err: %v,title: %s, picURL: %s, adZoneID: %d", err, order.Title, order.PicURL, order.AdzoneID)
 		} else {
 			order.TrendInfo.TKL = tkl
+			log.Info("重新设置淘口令,商品ID: %s,新口令:%s", order.ID, order.TrendInfo.TKL)
 		}
-		svr.SetToUnmatch(c, order.ItemID, order.AdzoneID, order)
+		svr.UpdateToUnmatch(c, order.ItemID, order.AdzoneID, order)
 	}
 	t := template.Must(template.New("item.tmpl").Delims("{{", "}}").ParseFiles("./res/item.tmpl"))
 	err = t.Execute(c.Writer, map[string]interface{}{
-		"title":     order.Title,
-		"picURL":    order.PicURL,
-		"tkl":       order.TrendInfo.TKL,
-		"shopName":  order.ShopName,
-		"ngrok":     service.Ngrok,
-		"trendInfo": order.TrendInfo,
+		"title":      order.Title,
+		"picURL":     order.PicURL,
+		"tkl":        order.TrendInfo.TKL,
+		"shopName":   order.ShopName,
+		"serverAddr": svr.GetServerAddr(),
+		"trendInfo":  order.TrendInfo,
 	})
 	if err != nil {
 		log.Error("render template failed, err: %v", err)

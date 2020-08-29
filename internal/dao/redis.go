@@ -8,6 +8,8 @@ import (
 	"taobaoke/internal/model"
 	"time"
 
+	"go.uber.org/zap"
+
 	xtime "github.com/go-kratos/kratos/pkg/time"
 
 	"github.com/go-redis/redis/v8"
@@ -19,10 +21,13 @@ import (
 type Fieldfun func() string
 
 const (
-	_orderMap   = "order_map:%s"
-	_unmatchMap = "unmatch_map:%d.%d"
-	_tkl        = "tkl:%s"
-	redisOK     = "OK"
+	// id -> order
+	_orderMap = "order_map"
+	// tradeParentID -> order
+	_matchMap = "match_map"
+	_unmatch  = "unmatch:%d.%d"
+	_tkl      = "tkl:%s"
+	redisOK   = "OK"
 )
 
 type RedisConfig struct {
@@ -92,40 +97,58 @@ func (d *dao) PingRedis(ctx context.Context) (err error) {
 }
 
 func unmatchKey(itemID int64, adZoneID int64) string {
-	return fmt.Sprintf(_unmatchMap, itemID, adZoneID)
+	return fmt.Sprintf(_unmatch, itemID, adZoneID)
 }
-
-func (d *dao) SetNXToUnmatch(ctx context.Context, itemID, adZoneID int64, orderNo string) (ok bool, err error) {
+func (d *dao) SetNXToUnmatch(ctx context.Context, itemID, adZoneID int64, nonce string) (ok bool, err error) {
 	//// https://github.com/redis/redis/issues/167 在field上设置过期时间在2020年还未实现...
-	//if err = conn.Send("EXPIRE", _unmatchMap, 24*60*60); err != nil {
-	//	log.Error("conn.Send(EXPIRE, %s, %d) error(%+v)", _unmatchMap, 24*60*60, err)
+	//if err = conn.Send("EXPIRE", _unmatch, 24*60*60); err != nil {
+	//	log.Error("conn.Send(EXPIRE, %s, %d) error(%+v)", _unmatch, 24*60*60, err)
 	//	return
 	//}
 	key := unmatchKey(itemID, adZoneID)
 	// 保存5秒
-	ok, err = d.redis.SetNX(ctx, key, orderNo, time.Second*5).Result()
+	ok, err = d.redis.SetNX(ctx, key, nonce, time.Second*5).Result()
 	if err != nil {
-		log.Error("conn.Do(SetNX, %s, %s) error(%v)", key, orderNo, err)
+		log.Error("conn.Do(SetNX, %s, %s) error(%v)", key, nonce, err)
 	}
 	return
 }
-
-func (d *dao) SetToUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order) (ok bool, err error) {
+func (d *dao) SetToUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order, nonce string) (ok bool, err error) {
 	key := unmatchKey(itemID, adZoneID)
 	marshal, err := json.Marshal(order)
 	if err != nil {
 		return
 	}
-	// 保存10天
-	result, err := d.redis.Set(ctx, key, marshal, time.Hour*24*10).Result()
+	old, err := d.redis.GetSet(ctx, key, marshal).Result()
 	if err != nil {
 		err = fmt.Errorf("conn.Do(Set, %s, %s) error(%v)", key, marshal, err)
 		return
 	}
-	if result == redisOK {
-		ok = true
+
+	if strings.Compare(old, nonce) != 0 {
+		return false, nil
+	}
+
+	result, err := d.redis.Expire(ctx, key, time.Hour*24*10).Result()
+	if err != nil {
+		err = fmt.Errorf("conn.Do(Expire, %s, %s) error(%v)", key, marshal, err)
 		return
 	}
+	return result, nil
+
+}
+func (d *dao) UpdateFromUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order) (ok bool, err error) {
+	key := unmatchKey(itemID, adZoneID)
+	marshal, err := json.Marshal(order)
+	if err != nil {
+		return
+	}
+	result, err := d.redis.Set(ctx, key, marshal, 0).Result()
+	if err != nil {
+		err = fmt.Errorf("conn.Do(Set, %s, %s) error(%v)", key, marshal, err)
+		return
+	}
+	ok = result == redisOK
 	return
 }
 
@@ -142,41 +165,108 @@ func (d *dao) ExistInUnmatch(ctx context.Context, itemID, adZoneID int64) (exist
 	}
 	return
 }
-func (d *dao) UnmatchGet(ctx context.Context, itemID, adZoneID int64) (order *model.Order, err error) {
+func (d *dao) GetUnmatch(ctx context.Context, itemID, adZoneID int64) (*model.Order, error) {
 	key := unmatchKey(itemID, adZoneID)
 	result, err := d.redis.Get(ctx, key).Result()
 	if err != nil {
 		err = fmt.Errorf("conn.Do(Get, %s) error(%v)", key, err)
-		return
+		return nil, err
 	}
 	if result == "" {
-		err = fmt.Errorf("UnmatchGet not found order")
+		err = fmt.Errorf("GetUnmatch not found order")
+		return nil, err
+	}
+	v := &model.Order{}
+	if err = json.Unmarshal([]byte(result), v); err != nil {
+		err = fmt.Errorf("GetUnmatch Unmarshal error: (%w),data: %s", err, result)
+		return nil, err
+	}
+	return v, nil
+}
+func (d *dao) GetAllUnmatch(ctx context.Context) (map[string]*model.Order, error) {
+	index := strings.Index(_unmatch, ":")
+	iter := d.redis.Scan(ctx, 0, _unmatch[:index+1]+"*", 0).Iterator()
+	all := map[string]*model.Order{}
+	kSlice := make([]string, 0)
+	for iter.Next(ctx) {
+		kSlice = append(kSlice, iter.Val())
+	}
+	if err := iter.Err(); err != nil {
+		return nil, err
+	}
+	vSlice, err := d.redis.MGet(ctx, kSlice...).Result()
+	if err != nil {
+		return nil, err
+	}
+	for i, value := range vSlice {
+		if value == nil {
+			continue
+		}
+		v := &model.Order{}
+		if err := json.Unmarshal([]byte(value.(string)), v); err != nil {
+			d.logger.Error("GetAllUnmatch", zap.Error(err), zap.String("值", iter.Val()))
+			continue
+		}
+		if _, exist := all[kSlice[i]]; !exist {
+			all[kSlice[i]] = v
+		}
+
+	}
+	return all, nil
+}
+
+func (d *dao) MatchGetAll(ctx context.Context) ([]*model.Order, error) {
+	iter := d.redis.HScan(ctx, _matchMap, 0, "", 0).Iterator()
+	all := make([]*model.Order, 0)
+	kvSlice := make([]string, 0)
+	for iter.Next(ctx) {
+		kvSlice = append(kvSlice, iter.Val())
+	}
+	if err := iter.Err(); err != nil {
+		return nil, err
+	}
+	for i := 1; i < len(kvSlice); i += 2 {
+		if kvSlice[i] == cacheNull {
+			continue
+		}
+		v := &model.Order{}
+		if err := json.Unmarshal([]byte(kvSlice[i]), v); err != nil {
+			d.logger.Error("MatchGetAll", zap.Error(err), zap.String("值", iter.Val()))
+			continue
+		}
+		all = append(all, v)
+	}
+	return all, nil
+}
+func (d *dao) DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n int64, err error) {
+	if len(tradeParentIDs) == 0 {
 		return
 	}
-	if err = json.Unmarshal([]byte(result), order); err != nil {
-		err = fmt.Errorf("UnmatchGet Unmarshal error: (%w),data: %s", err, result)
+	n, err = d.redis.HDel(ctx, _matchMap, tradeParentIDs...).Result()
+	if err != nil {
+		err = fmt.Errorf("conn.Do(Del, %d, %s) error(%w)", n, tradeParentIDs, err)
 		return
 	}
 	return
 }
-func (d *dao) UnmatchGetAll(ctx context.Context) ([]string, error) {
-	index := strings.Index(_unmatchMap, ":")
-	iter := d.redis.Scan(ctx, 0, _unmatchMap[:index+1]+"*", 0).Iterator()
-	all := make([]string, 0)
-	for iter.Next(ctx) {
-		all = append(all, iter.Val())
-	}
-
-	if err := iter.Err(); err != nil {
-		return nil, err
-	}
-	return all, nil
-}
-func (d *dao) DelFromUnmatchMap(ctx context.Context, itemID, adZoneID int64) (int64, error) {
-	key := unmatchKey(itemID, adZoneID)
-	result, err := d.redis.Del(ctx, key).Result()
+func (d *dao) DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error) {
+	itemID := order.ItemID
+	adZoneID := order.AdzoneID
+	tradeParentID := order.TradeParentID
+	marshal, err := json.Marshal(order)
 	if err != nil {
-		log.Error("conn.Do(DEL, %s) error(%v)", key, err)
+		err = fmt.Errorf("DelFromUnmatchAndSetToMatch failed error: (%w),order: %v", err, order)
+		return
 	}
-	return result, err
+	key := unmatchKey(itemID, adZoneID)
+	pipeline := d.redis.TxPipeline()
+	del := pipeline.Del(ctx, key)
+	set := pipeline.HSet(ctx, _matchMap, tradeParentID, marshal)
+	_, err = pipeline.Exec(ctx)
+	if err != nil {
+		err = fmt.Errorf("DelFromUnmatchAndSetToMatch failed error: (%w),order: %v", err, order)
+		return
+	}
+	ok = del.Val() == 1 && set.Val() == 1
+	return
 }

@@ -2,7 +2,8 @@ package dao
 
 import (
 	"context"
-	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"taobaoke/internal/dao/gdbc"
 	"taobaoke/internal/model"
@@ -25,27 +26,39 @@ var (
 )
 
 type OrderDataService interface {
-	FindOrderByID(ctx context.Context, id int64) (order *model.Order, err error)
-	FindOrderByIDs(ctx context.Context, ids []int64) (order []*model.Order, err error)
-	FindOrderByTradeParentID(ctx context.Context, ids []string) (order []*model.Order, err error)
-	FindOneAndUpdateCommission(ctx context.Context, id string, order *model.Order) (err error)
 	OrderMatchService
+	OrderMonitor
+	QueryOrderByStatus(ctx context.Context, start, end tools.Time, status ...model.OrderStatus) ([]*model.Order, error)
+	QueryNotWithDrawOrderByUserID(ctx context.Context, id string) (result []*model.Order, err error)
+	UpdateSingleOrderGeneric(ctx context.Context, id string, additionalFilter, operation bson.M) (err error)
+}
+type OrderMonitor interface {
+	FindOrderByID(ctx context.Context, id string) (order *model.Order, err error)
+	UpdateOrderFailedStatus(ctx context.Context, id string, tradeParentID string) (err error)
+	UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error)
+	UpdateManyWithDrawStatus(ctx context.Context, ids []string) (err error)
+	FindOneAndUpdateOrderBalanceStatus(ctx context.Context, id string, tradeParentID string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (order *model.Order, err error)
+}
+
+type CacheObjService interface {
+	FindOrderByTradeParentID(ctx context.Context, ids []string) (order []*model.Order, err error)
+	FindOrderByIDs(ctx context.Context, ids []string) (order []*model.Order, err error)
 }
 
 type OrderMatchService interface {
 	Insert(ctx context.Context, o *model.Order) (err error)
-	SetNXToUnmatch(ctx context.Context, itemID, adZoneID int64, orderNo string) (ok bool, err error)
-	SetToUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order) (ok bool, err error)
-	UnmatchGet(ctx context.Context, itemID, adZoneID int64) (*model.Order, error)
-	UnmatchGetAll(ctx context.Context) ([]string, error)
-	ExistInUnmatch(ctx context.Context, itemID, adZoneID int64) (exist bool, err error)
-	DelFromUnmatchMap(ctx context.Context, itemID, adZoneID int64) (int64, error)
 	QueryOrderByTradeParentID(ctx context.Context, ids []string, onlyUnfinished bool) (results []*model.Order, err error)
-	QueryOrderByStatus(ctx context.Context, start, end tools.Time, status ...model.OrderStatus) ([]*model.Order, error)
-	QueryNotGiveSalaryOrderByUserID(ctx context.Context, id string) (result []*model.Order, err error)
-	UpdateSingleOrderGeneric(ctx context.Context, id string, additionalFilter, operation bson.M) (err error)
-	DelFromOrderCache(ctx context.Context, tradeParentIDs []string) (n int64, err error)
+	SetNXToUnmatch(ctx context.Context, itemID, adZoneID int64, orderNo string) (ok bool, err error)
+	SetToUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order, nonce string) (ok bool, err error)
+	UpdateFromUnmatch(ctx context.Context, itemID, adZoneID int64, order *model.Order) (ok bool, err error)
+	GetUnmatch(ctx context.Context, itemID, adZoneID int64) (*model.Order, error)
+	GetAllUnmatch(ctx context.Context) (map[string]*model.Order, error)
+	MatchGetAll(ctx context.Context) ([]*model.Order, error)
+	ExistInUnmatch(ctx context.Context, itemID, adZoneID int64) (exist bool, err error)
+	DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error)
+	DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n int64, err error)
 }
+
 type OrderClient struct {
 	collections map[string]*mongo.Collection // 数据表map
 	Logger      *log.Logger
@@ -135,18 +148,23 @@ func (oc *OrderClient) Insert(ctx context.Context, o *model.Order) (err error) {
 	return
 }
 
-func (oc *OrderClient) FindOrderByIDs(ctx context.Context, ids []int64) (orders []*model.Order, err error) {
+func (oc *OrderClient) FindOrderByIDs(ctx context.Context, ids []string) (orders []*model.Order, err error) {
+	if len(ids) == 0 {
+		err = NewErrIDNotFound(ids)
+		return
+	}
+
 	query := bson.M{
 		model.IDField: bson.M{IN: ids},
 	}
 	orders, _, err = oc.queryOrder(ctx, query, nil, 0, 0, nil, nil)
 	if err != nil {
-		oc.Logger.Error("FindOrderByID", zap.Error(err), ZapBsonM("query", query))
+		oc.Logger.Error("FindOrderByIDs", zap.Error(err), ZapBsonM("query", query))
 		err = errors.New("根据id获取订单失败")
 		return
 	}
 	if len(orders) == 0 {
-		err = fmt.Errorf("未找到ID为%d的订单", ids)
+		err = NewErrIDNotFound(ids)
 		return
 	}
 	return
@@ -169,37 +187,136 @@ func (oc *OrderClient) FindOrderByTradeParentID(ctx context.Context, tradeParent
 	}
 	return
 }
-func (d *dao) FindOneAndUpdateCommission(ctx context.Context, id string, order *model.Order) (err error) {
+
+func (oc *OrderClient) findOneAndUpdateOrderBalanceStatus(ctx context.Context, id string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (order *model.Order, err error) {
+	commission, err := strconv.ParseFloat(totalCommissionFee, 64)
+	if err != nil {
+		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err))
+		return
+	}
+	payPrice, err := strconv.ParseFloat(PayPrice, 64)
+	if err != nil {
+		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err))
+		return
+	}
 	filter := bson.M{
 		model.IDField:      id,
 		model.DeletedField: false,
-		model.SalaryField:  bson.M{LTE: 0},
 	}
-	update := bson.M{
+	operation := bson.M{
 		SET: bson.M{
-			model.CommissionField:  order.Commission,
-			model.SalaryField:      order.Salary,
-			model.EarningTimeField: order.EarningTime,
-			model.StatusField:      order.Status,
+			model.StatusField:      model.OrderBalance,
 			model.UpdateTimeField:  tools.Now(),
+			model.CommissionField:  int64(commission * 100),
+			model.SalaryScaleField: salaryScale,
+			model.SalaryField:      int64(commission*100) * salaryScale / 100,
+			model.EarningTimeField: earningTime,
+			model.PayPriceField:    int64(payPrice * 100),
 		},
 	}
-	option := options.FindOneAndUpdate().SetReturnDocument(options.Before)
-	singleResult := d.orderClient.collections[model.DBOrderKey].FindOneAndUpdate(ctx, filter, update, option)
-	err = singleResult.Err()
+	option := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	updateResult := oc.collections[model.DBOrderKey].FindOneAndUpdate(ctx, filter, operation, option)
+	err = updateResult.Err()
 	if err != nil && err != mongo.ErrNoDocuments {
-		d.logger.Error("结算佣金更新错误", zap.Error(err))
-		return err
+		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err), ZapBsonM("filter", filter))
+		return
 	}
 	v := &model.Order{}
-	err = singleResult.Decode(v)
+	err = updateResult.Decode(v)
+	if err != nil && err != mongo.ErrNoDocuments {
+		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err), ZapBsonM("filter", filter))
+		return
+	}
+	oc.Logger.Info("findOneAndUpdateOrderBalanceStatus", zap.String("id", id), zap.Int64("匹配数量", 1), zap.Int64("更新数量", 1))
+	return v, nil
+}
+
+func (oc *OrderClient) updateManyWithDrawStatus(ctx context.Context, ids []string) (err error) {
+	if len(ids) == 0 {
+		return
+	}
+	filter := bson.M{
+		model.IDField:      bson.M{IN: ids},
+		model.DeletedField: false,
+	}
+	operation := bson.M{
+		SET: bson.M{
+			model.WithDrawStatusField: true,
+			model.UpdateTimeField:     tools.Now(),
+		},
+	}
+
+	updateResult, err := oc.collections[model.DBOrderKey].UpdateMany(ctx, filter, operation)
 	if err != nil {
+		oc.Logger.Error("UpdateWithDrawStatus", zap.Error(err), ZapBsonM("filter", filter))
+		return
+	}
+	oc.Logger.Info("UpdateWithDrawStatus", zap.Strings("ids", ids), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
+	return
+}
+
+func (oc *OrderClient) updateOrderFailedStatus(ctx context.Context, id string) (err error) {
+	filter := bson.M{
+		model.IDField:      id,
+		model.DeletedField: false,
+	}
+	operation := bson.M{
+		SET: bson.M{
+			model.StatusField:     model.OrderFailed,
+			model.UpdateTimeField: tools.Now(),
+		},
+	}
+	updateResult, err := oc.collections[model.DBOrderKey].UpdateOne(ctx, filter, operation)
+	if err != nil {
+		oc.Logger.Error("UpdateOrderFailedStatus", zap.Error(err), ZapBsonM("filter", filter))
+		return
+	}
+	oc.Logger.Info("UpdateOrderFailedStatus", zap.String("id", id), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
+	return
+}
+func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error) {
+	alipayTotalPrice, err := strconv.ParseFloat(AlipayTotalPrice, 64)
+	if err != nil {
+		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
 		return err
 	}
-	if v.Salary != 0 {
-		return fmt.Errorf("FindOneAndUpdateCommission 有人在此次更新之前更新了一遍,id: %s", id)
+	incomeRate, err := strconv.ParseFloat(IncomeRate, 64)
+	if err != nil {
+		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
+		return err
 	}
-	return nil
+	rebate, err := strconv.ParseFloat(pubSharePreFee, 64)
+	if err != nil {
+		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
+		return err
+	}
+	calculateCommission := alipayTotalPrice * float64(ItemNum) * incomeRate / 10000
+	// 保留两位小数四舍五入
+	roundCommission := math.Round(calculateCommission*100) / 100
+	if roundCommission != rebate {
+		err = model.NewCalculateCommissionInconsistentError(rebate, roundCommission, calculateCommission)
+		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
+		err = nil
+	}
+	filter := bson.M{
+		model.IDField:      id,
+		model.DeletedField: false,
+	}
+	operation := bson.M{
+		SET: bson.M{
+			model.AlipayTotalPriceField: int64(alipayTotalPrice * 100),
+			model.PaidTimeField:         paidTime,
+			model.UpdateTimeField:       tools.Now(),
+			model.StatusField:           model.OrderPaid,
+		},
+	}
+	updateResult, err := oc.collections[model.DBOrderKey].UpdateOne(ctx, filter, operation)
+	if err != nil {
+		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err), ZapBsonM("filter", filter))
+		return
+	}
+	oc.Logger.Info("UpdateOrderPaidStatus", zap.String("id", id), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
+	return
 }
 
 func (oc *OrderClient) queryOrder(ctx context.Context, query bson.M, sort []string, start, limit int64, include, exclude []string, collations ...*options.Collation) (records []*model.Order, count int64, err error) {

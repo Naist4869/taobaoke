@@ -21,7 +21,18 @@ type analyzingKeyResp struct {
 	Code      int    `json:"code"`
 	Msg       string `json:"msg"`
 }
-
+type convertMyKeyResult struct {
+	AdzoneID     int64
+	Title        string
+	ItemID       int64
+	PicURL       string
+	ShopName     string
+	ShopType     int
+	Price        int64
+	Rebate       int64
+	Coupon       int64
+	ReservePrice int64
+}
 type HighCommissionResp struct {
 	Result struct {
 		Data HighCommissionResult `json:"data"`

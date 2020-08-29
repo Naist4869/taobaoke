@@ -26,8 +26,7 @@ var _ context.Context
 var _ binding.StructValidator
 
 var PathTBKPing = "/demo.service.v1.TBK/Ping"
-var PathTBKTitleConvertTBKey = "/demo.service.v1.TBK/TitleConvertTBKey"
-var PathTBKKeyConvertKey = "/demo.service.v1.TBK/KeyConvertKey"
+var PathTBKKeyConvert = "/demo.service.v1.TBK/KeyConvert"
 var PathTBKWithDraw = "/demo.service.v1.TBK/WithDraw"
 
 var PathWechatTemplateMsgSend = "/demo.service.v1.Wechat/TemplateMsgSend"
@@ -36,15 +35,7 @@ var PathWechatTemplateMsgSend = "/demo.service.v1.Wechat/TemplateMsgSend"
 type TBKBMServer interface {
 	Ping(ctx context.Context, req *google_protobuf1.Empty) (resp *google_protobuf1.Empty, err error)
 
-	//  rpc SayHello(HelloReq) returns (.google.protobuf.Empty);
-	//  rpc SayHelloURL(HelloReq) returns (HelloResp) {
-	//    option (google.api.http) = {
-	//      get: "/kratos-demo/say_hello"
-	//    };
-	//  };
-	TitleConvertTBKey(ctx context.Context, req *TitleConvertTBKeyReq) (resp *TitleConvertTBKeyResp, err error)
-
-	KeyConvertKey(ctx context.Context, req *KeyConvertKeyReq) (resp *KeyConvertKeyResp, err error)
+	KeyConvert(ctx context.Context, req *KeyConvertReq) (resp *KeyConvertResp, err error)
 
 	WithDraw(ctx context.Context, req *WithDrawReq) (resp *WithDrawResp, err error)
 }
@@ -60,21 +51,12 @@ func tBKPing(c *bm.Context) {
 	c.JSON(resp, err)
 }
 
-func tBKTitleConvertTBKey(c *bm.Context) {
-	p := new(TitleConvertTBKeyReq)
+func tBKKeyConvert(c *bm.Context) {
+	p := new(KeyConvertReq)
 	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
 		return
 	}
-	resp, err := TBKSvc.TitleConvertTBKey(c, p)
-	c.JSON(resp, err)
-}
-
-func tBKKeyConvertKey(c *bm.Context) {
-	p := new(KeyConvertKeyReq)
-	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
-		return
-	}
-	resp, err := TBKSvc.KeyConvertKey(c, p)
+	resp, err := TBKSvc.KeyConvert(c, p)
 	c.JSON(resp, err)
 }
 
@@ -91,8 +73,7 @@ func tBKWithDraw(c *bm.Context) {
 func RegisterTBKBMServer(e *bm.Engine, server TBKBMServer) {
 	TBKSvc = server
 	e.GET("/demo.service.v1.TBK/Ping", tBKPing)
-	e.GET("/demo.service.v1.TBK/TitleConvertTBKey", tBKTitleConvertTBKey)
-	e.GET("/demo.service.v1.TBK/KeyConvertKey", tBKKeyConvertKey)
+	e.GET("/demo.service.v1.TBK/KeyConvert", tBKKeyConvert)
 	e.GET("/demo.service.v1.TBK/WithDraw", tBKWithDraw)
 }
 

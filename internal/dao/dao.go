@@ -46,7 +46,39 @@ type dao struct {
 	cache        *fanout.Fanout
 	logger       *log.Logger
 	demoExpire   int32
-	orderCacheCh chan map[string]interface{}
+	orderCacheCh chan map[string]interface{} // key -> tradeParentID:order
+}
+
+func (d *dao) UpdateOrderFailedStatus(ctx context.Context, id string, tradeParentID string) (err error) {
+	err = d.orderClient.updateOrderFailedStatus(ctx, id)
+	if err != nil {
+		return err
+	}
+	if _, err = d.DelFromMatchCache(ctx, []string{tradeParentID}); err != nil {
+		d.logger.Error("UpdateOrderFailedStatus", zap.Error(err), zap.String("tradeParentID", id))
+		err = nil
+	}
+	return
+}
+
+func (d *dao) UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error) {
+	return d.orderClient.updateOrderPaidStatus(ctx, id, paidTime, AlipayTotalPrice, IncomeRate, pubSharePreFee, ItemNum)
+}
+
+func (d *dao) UpdateManyWithDrawStatus(ctx context.Context, ids []string) (err error) {
+	return d.orderClient.updateManyWithDrawStatus(ctx, ids)
+}
+
+func (d *dao) FindOneAndUpdateOrderBalanceStatus(ctx context.Context, id string, tradeParentID string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (order *model.Order, err error) {
+	order, err = d.orderClient.findOneAndUpdateOrderBalanceStatus(ctx, id, earningTime, totalCommissionFee, PayPrice, salaryScale)
+	if err != nil {
+		return
+	}
+	if _, err = d.DelFromMatchCache(ctx, []string{tradeParentID}); err != nil {
+		d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("tradeParentID", id))
+		err = nil
+	}
+	return
 }
 
 func (d *dao) Insert(ctx context.Context, o *model.Order) (err error) {
@@ -54,15 +86,15 @@ func (d *dao) Insert(ctx context.Context, o *model.Order) (err error) {
 	return d.orderClient.Insert(ctx, o)
 }
 
-func (d *dao) FindOrderByID(ctx context.Context, id int64) (order *model.Order, err error) {
-	orders, err := d.orderClient.FindOrderByIDs(ctx, []int64{id})
+func (d *dao) FindOrderByID(ctx context.Context, id string) (order *model.Order, err error) {
+	orders, err := d.orderClient.FindOrderByIDs(ctx, []string{id})
 	if err != nil {
 		return
 	}
 	return orders[0], nil
 }
 
-func (d *dao) FindOrderByIDs(ctx context.Context, ids []int64) (order []*model.Order, err error) {
+func (d *dao) FindOrderByIDs(ctx context.Context, ids []string) (order []*model.Order, err error) {
 	return d.orderClient.FindOrderByIDs(ctx, ids)
 }
 
@@ -115,7 +147,11 @@ func (d *dao) setOrderCache() {
 			d.logger.Info("设置缓存", zap.String("错误", "通道已关闭"))
 			break
 		}
-		d.redis.MSet(context.Background(), missCache)
+		for key, m := range missCache {
+			if n, err := d.redis.HSet(context.Background(), key, m).Result(); err != nil {
+				d.logger.Warn("setOrderCache", zap.Error(err), zap.Int64("n", n))
+			}
+		}
 		// 防止redis阻塞
 		time.Sleep(time.Millisecond * 1)
 	}

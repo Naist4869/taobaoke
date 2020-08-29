@@ -20,11 +20,13 @@ require (
 	github.com/prometheus/client_golang v1.5.1
 	github.com/russross/blackfriday/v2 v2.0.1
 	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726
+	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.5.1
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf
 	github.com/urfave/cli/v2 v2.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.3.4
 	go.uber.org/zap v1.15.0
+	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
 	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
 	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1 // indirect
 	golang.org/x/text v0.3.2

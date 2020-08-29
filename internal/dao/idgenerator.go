@@ -53,6 +53,7 @@ func (i *idGenerator) Next() (int64, error) {
 	}
 	return value, nil
 }
+
 func NewIDGenerator(client *mongo.Client, logger *log.Logger) (*idGenerator, error) {
 	var (
 		cfg mongoConfig

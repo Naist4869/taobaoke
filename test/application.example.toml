@@ -1,8 +1,12 @@
 
 # This is a TOML document. Boom~
 demoExpire = "24h"
-uri = ""
+uri = "http://xxx/rest"
 
-appKey = ""
-adzoneID =  123
+appKey = "30055875"
+# 第一个id最好别动
+adzoneID =  [1,2,3,4]
 taokoulingAppKey = ""
+appSecret=""
+session = ""
+serverAddr = "https://xxx"

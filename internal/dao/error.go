@@ -6,16 +6,24 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// ErrOrderNoNotFound 指定ID的用户不存在错误
-type ErrOrderNoNotFound struct {
-	id string
+// ErrOrderIDNotFound 指定ID的用户不存在错误
+type ErrOrderIDNotFound struct {
+	id []string
 }
 
-func NewErrIDNotFound(id string) ErrOrderNoNotFound {
-	return ErrOrderNoNotFound{id: id}
+func NewErrIDNotFound(id []string) ErrOrderIDNotFound {
+	return ErrOrderIDNotFound{id: id}
 }
-func (e ErrOrderNoNotFound) Error() string {
-	return fmt.Sprintf("未找到OrderNo为%s的订单", e.id)
+func (e ErrOrderIDNotFound) Error() string {
+	return fmt.Sprintf("未找到OrderID为%s的订单", e.id)
+}
+func (e ErrOrderIDNotFound) Is(target error) bool {
+	switch target.(type) {
+	case *ErrOrderIDNotFound, ErrOrderIDNotFound:
+		return true
+	default:
+		return false
+	}
 }
 
 // ErrTradeParentIDNotFound 指定的淘宝订单号不存在错误

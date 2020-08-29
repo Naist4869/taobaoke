@@ -11,7 +11,6 @@ import (
 	"taobaoke/internal/model"
 	"taobaoke/tools"
 	"testing"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 
@@ -125,45 +124,6 @@ func TestService_TbkDgMaterialOptional(t *testing.T) {
 	})
 }
 
-func TestService_Convert(t *testing.T) {
-	type args struct {
-		ctx   context.Context
-		title string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "标题转成淘口令",
-			args: args{
-				ctx:   ctx,
-				title: "吉列威锋双层剃须刀手动刮胡刀老式刮脸刀吉利刀头刀架套装",
-			},
-			want: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := testService.Convert(tt.args.ctx, tt.args.title)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Convert() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Convert() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestOpenExcel(t *testing.T) {
-	err := OpenExcel()
-	require.NoError(t, err)
-}
-
 func TestOpenXLS(t *testing.T) {
 	OpenXLS()
 }
@@ -223,19 +183,13 @@ func TestService_analyzingKey(t *testing.T) {
 
 }
 
-func TestService_ConvertMyKey(t *testing.T) {
-	key, err := testService.keyConvertKey(ctx, "₳bdoBc2kfTAS₳", testService.GetdefultAdzoneID())
-	require.NoError(t, err)
-	spew.Dump(key)
-}
-func TestService_KeyConvertKey(t *testing.T) {
-	convertKey, err := testService.KeyConvertKey(ctx, &pb.KeyConvertKeyReq{
+func TestService_KeyConvert(t *testing.T) {
+	convertKey, err := testService.KeyConvert(ctx, &pb.KeyConvertReq{
 		FromKey: `$nniWccD1nru$`,
 		UserID:  "1",
 	})
 	require.NoError(t, err)
-	t.Logf("%s", convertKey.ToKey)
-	time.Sleep(5 * time.Second)
+	t.Logf("%v", convertKey)
 }
 
 func TestRegexp2(t *testing.T) {
@@ -320,4 +274,8 @@ func TestService_WithDraw(t *testing.T) {
 		return true
 	})
 
+}
+func TestOrders_String(t *testing.T) {
+	s := testService.orders.String()
+	t.Log(s)
 }

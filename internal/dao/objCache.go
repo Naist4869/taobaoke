@@ -18,25 +18,25 @@ import (
 const cacheNull = "{null}"
 
 //FGetKey 根据id获取key
-type FGetKey func(id string, opt ...interface{}) (k []string)
+type FGetKey func(id string, opt ...interface{}) (key string, field []string)
 
 // ICacheObj 对象缓存接口
 type ICacheObj interface {
 	// GetKey 获取对象缓存的key
-	GetKey(id string, opt ...interface{}) (k []string)
+	GetKey(id string, opt ...interface{}) (key string, field []string)
 	// AppendString--v is from cache, to decode & append to dest, && check null
 	ICacheDecoder
 	// AppendRaw--get from db, to encode & append to dest & to convert to string
-	FillFromDB(ctx context.Context, s Dao, miss []string, kopt []interface{}, opt ...interface{}) (missCache map[string]interface{}, err error)
+	FillFromDB(ctx context.Context, d CacheObjService, miss []string, kopt []interface{}, opt ...interface{}) (missCache map[string]interface{}, err error)
 }
 
 type ICacheDecoder interface {
 	io.Writer
 }
 
-func (d *dao) QueryOrderByTradeParentID(ctx context.Context, ids []string, onlyUnfinished bool) (results []*model.Order, err error) {
-	objDest := &orderArr{}
-	if err = d.objCache(ctx, ids, objDest, nil); err != nil {
+func (d *dao) QueryOrderByTradeParentID(ctx context.Context, tradeParentIDs []string, onlyUnfinished bool) (results []*model.Order, err error) {
+	objDest := &tradeParentIDsToOrderArr{}
+	if err = d.objCache(ctx, tradeParentIDs, objDest, nil); err != nil {
 		return
 	}
 	if !onlyUnfinished {
@@ -51,22 +51,27 @@ func (d *dao) QueryOrderByTradeParentID(ctx context.Context, ids []string, onlyU
 	return
 }
 
-func (d *dao) QueryNotGiveSalaryOrderByUserID(ctx context.Context, id string) (result []*model.Order, err error) {
+func (d *dao) QueryNotWithDrawOrderByUserID(ctx context.Context, id string) (result []*model.Order, err error) {
 	query := bson.M{
-		model.UserIDField: id,
-		model.SalaryField: bson.M{LTE: 0},
+		model.UserIDField:         id,
+		model.WithDrawStatusField: false,
 	}
-	d.logger.Info("QueryNotGiveSalaryOrderByUserID订单查询", ZapBsonM("条件", query))
+	d.logger.Info("QueryNotWithDrawOrderByUserID订单查询", ZapBsonM("条件", query))
 	orders, _, err := d.orderClient.queryOrder(ctx, query, nil, 0, 0, nil, nil)
 	if err != nil {
-		d.logger.Error(fmt.Sprint("QueryNotGiveSalaryOrderByUserID订单查询失败"), zap.Error(err), ZapBsonM("条件", query))
+		d.logger.Error(fmt.Sprint("QueryNotWithDrawOrderByUserID订单查询失败"), zap.Error(err), ZapBsonM("条件", query))
 		return nil, err
 	}
 	return orders, nil
 }
 func (d *dao) QueryOrderByStatus(ctx context.Context, start, end tools.Time, status ...model.OrderStatus) ([]*model.Order, error) {
-	query := bson.M{model.CreateTimeField: bson.M{GTE: start, LTE: end},
-		model.StatusField: bson.M{IN: status},
+	var query bson.M
+	if len(status) > 0 {
+		query = bson.M{model.CreateTimeField: bson.M{GTE: start, LTE: end},
+			model.StatusField: bson.M{IN: status},
+		}
+	} else {
+		query = bson.M{model.CreateTimeField: bson.M{GTE: start, LTE: end}}
 	}
 	d.logger.Info("订单查询", ZapBsonM("条件", query))
 	orders, _, err := d.orderClient.queryOrder(ctx, query, []string{model.CreateTimeField}, 0, 0, nil, nil)
@@ -127,7 +132,7 @@ func (d *dao) objCache(ctx context.Context, ids []string, dest ICacheObj, kopt [
 		return
 	}
 	//get miss from db
-	missCache, err := dest.FillFromDB(ctx, d, miss, kopt, opt...)
+	missCache, err := dest.FillFromDB(ctx, d.orderClient, miss, kopt, opt...)
 	if err != nil {
 		return
 	}
@@ -135,9 +140,11 @@ func (d *dao) objCache(ctx context.Context, ids []string, dest ICacheObj, kopt [
 	if missCache == nil {
 		missCache = map[string]interface{}{}
 	}
+	var key string
 	for _, missid := range miss {
-		missks := dest.GetKey(missid, kopt...)
-		for _, missk := range missks {
+		var fields []string
+		key, fields = dest.GetKey(missid, kopt...)
+		for _, missk := range fields {
 			if _, exist := missCache[missk]; exist {
 				continue
 			}
@@ -145,7 +152,7 @@ func (d *dao) objCache(ctx context.Context, ids []string, dest ICacheObj, kopt [
 		}
 	}
 	d.logger.Info("objCache", zap.String("missCache", fmt.Sprintf("%+v", missCache)))
-	d.orderCacheCh <- missCache
+	d.orderCacheCh <- map[string]interface{}{key: missCache}
 	return
 }
 
@@ -173,7 +180,7 @@ func Strings(reply interface{}, err error) ([]string, error) {
 			if !ok {
 				return nil, fmt.Errorf("redigo: unexpected element type for Strings, got type %T", reply[i])
 			}
-			result[i] = string(p)
+			result[i] = p
 		}
 		return result, nil
 	case nil:
@@ -188,6 +195,7 @@ func (d *dao) getFromCache(ctx context.Context, ids []string, getKey FGetKey, de
 	var (
 		err    error
 		caches []string
+		key    string
 	)
 
 	if len(ids) == 0 {
@@ -197,28 +205,31 @@ func (d *dao) getFromCache(ctx context.Context, ids []string, getKey FGetKey, de
 	ids = tools.Unique(ids, false)
 
 	keymap := make(map[string]string, len(ids)) // 关键词->id
-	keys := make([]string, 0, len(ids))         // []关键字
+	fields := make([]string, 0, len(ids))       // []关键字
 
 	for _, id := range ids {
-		for _, k := range getKey(id, kopt...) {
+		var field []string
+		key, field = getKey(id, kopt...)
+
+		for _, k := range field {
 			if _, exist := keymap[k]; exist {
 				continue
 			}
 			keymap[k] = id
-			keys = append(keys, k)
+			fields = append(fields, k)
 		}
 	}
 
-	if caches, err = Strings(d.redis.MGet(ctx, keys...).Result()); err != nil {
+	if caches, err = Strings(d.redis.HMGet(ctx, key, fields...).Result()); err != nil {
 		miss = ids
-		d.logger.Warn("getFromCache", zap.Error(err), zap.Strings("keys", keys))
+		d.logger.Warn("getFromCache", zap.Error(err), zap.String("key", key), zap.Strings("fields", fields))
 		err = nil
 		return
 	}
 	// 去重
 	missMap := map[string]bool{}
 	for i, item := range caches {
-		id := keymap[keys[i]]
+		id := keymap[fields[i]]
 		if item != "" && item != cacheNull {
 			if _, err = dest.Write([]byte(item)); err == nil {
 				continue
@@ -231,24 +242,24 @@ func (d *dao) getFromCache(ctx context.Context, ids []string, getKey FGetKey, de
 		miss = append(miss, id)
 		missMap[id] = true
 	}
-	d.logger.Info("getFromCache", zap.Strings("keys", keys), zap.Strings("cache", caches), zap.Strings("miss", miss))
+	d.logger.Info("getFromCache", zap.String("key", key), zap.Strings("fields", fields), zap.Strings("cache", caches), zap.Strings("miss", miss))
 	return
 }
 
 // 开箱即用
-type orderArr struct {
+type tradeParentIDsToOrderArr struct {
 	dest []*model.Order
 }
 
-func (o *orderArr) GetKey(tradeParentID string, opt ...interface{}) (k []string) {
-	return []string{fmt.Sprintf(_orderMap, tradeParentID)}
+func (o *tradeParentIDsToOrderArr) GetKey(tradeParentID string, opt ...interface{}) (key string, field []string) {
+	return _matchMap, []string{tradeParentID}
 }
 
-func (o *orderArr) FillFromDB(ctx context.Context, s Dao, miss []string, kopt []interface{}, opt ...interface{}) (missCache map[string]interface{}, err error) {
+func (o *tradeParentIDsToOrderArr) FillFromDB(ctx context.Context, d CacheObjService, miss []string, kopt []interface{}, opt ...interface{}) (missCache map[string]interface{}, err error) {
 
-	orders, err := s.FindOrderByTradeParentID(ctx, miss)
+	orders, err := d.FindOrderByTradeParentID(ctx, miss)
 	if err != nil && !errors.Is(err, ErrTradeParentIDNotFound{}) {
-		err = fmt.Errorf("orderArr FillFromDB FindOrderByIDs error(%w) miss(%s)", err, miss)
+		err = fmt.Errorf("tradeParentIDsToOrderArr FillFromDB FindOrderByIDs error(%w) miss(%s)", err, miss)
 		return
 	}
 	o.dest = append(o.dest, orders...)
@@ -259,14 +270,15 @@ func (o *orderArr) FillFromDB(ctx context.Context, s Dao, miss []string, kopt []
 			//err = fmt.Errorf("FillFromDB json.Marshal error(%w) item(%+v)",err,item)
 			continue
 		}
-		for _, k := range o.GetKey(item.TradeParentID, kopt...) {
+		_, fields := o.GetKey(item.TradeParentID, kopt...)
+		for _, k := range fields {
 			missCache[k] = string(bs)
 		}
 	}
 	return missCache, nil
 }
 
-func (o *orderArr) Write(p []byte) (n int, err error) {
+func (o *tradeParentIDsToOrderArr) Write(p []byte) (n int, err error) {
 	one := &model.Order{}
 	if err = json.Unmarshal(p, one); err != nil {
 		return
@@ -274,17 +286,54 @@ func (o *orderArr) Write(p []byte) (n int, err error) {
 	o.dest = append(o.dest, one)
 	return
 }
-func (d *dao) DelFromOrderCache(ctx context.Context, tradeParentIDs []string) (n int64, err error) {
-	if len(tradeParentIDs) == 0 {
+
+// 开箱即用
+type orderIDsToOrderArr struct {
+	dest []*model.Order
+}
+
+func (o *orderIDsToOrderArr) GetKey(id string, opt ...interface{}) (key string, field []string) {
+	return _orderMap, []string{id}
+}
+
+func (o *orderIDsToOrderArr) Write(p []byte) (n int, err error) {
+	one := &model.Order{}
+	if err = json.Unmarshal(p, one); err != nil {
 		return
 	}
-	keys := make([]string, 0, len(tradeParentIDs))
-	for _, id := range tradeParentIDs {
-		keys = append(keys, fmt.Sprintf(_orderMap, id))
+	o.dest = append(o.dest, one)
+	return
+}
+
+func (o *orderIDsToOrderArr) FillFromDB(ctx context.Context, d CacheObjService, miss []string, kopt []interface{}, opt ...interface{}) (missCache map[string]interface{}, err error) {
+	orders, err := d.FindOrderByIDs(ctx, miss)
+	if err != nil && !errors.Is(err, ErrOrderIDNotFound{}) {
+		err = fmt.Errorf("orderIDsToOrderArr FillFromDB FindOrderByIDs error(%w) miss(%s)", err, miss)
+		return
 	}
-	n, err = d.redis.Del(ctx, keys...).Result()
+	o.dest = append(o.dest, orders...)
+	missCache = map[string]interface{}{}
+	for _, item := range orders {
+		bs, err := json.Marshal(item)
+		if err != nil {
+			//err = fmt.Errorf("FillFromDB json.Marshal error(%w) item(%+v)",err,item)
+			continue
+		}
+		_, fields := o.GetKey(item.ID, kopt...)
+		for _, k := range fields {
+			missCache[k] = string(bs)
+		}
+	}
+	return missCache, nil
+}
+
+func (d *dao) DelFromOrderCache(ctx context.Context, IDs []string) (n int64, err error) {
+	if len(IDs) == 0 {
+		return
+	}
+	n, err = d.redis.HDel(ctx, _orderMap, IDs...).Result()
 	if err != nil {
-		err = fmt.Errorf("conn.Do(Del, %d, %s) error(%w)", n, tradeParentIDs, err)
+		err = fmt.Errorf("conn.Do(Del, %d, %s) error(%w)", n, IDs, err)
 		return
 	}
 	return

@@ -18,25 +18,12 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"go.uber.org/zap"
 
 	"github.com/Naist4869/log"
 )
 
-const (
-	max                 = 30   // 单个号码最大下单数
-	workerOrderCapacity = 1000 // 每个工人历史订单的起始容量
-)
-
-var (
-	errFill = fmt.Errorf("已经达到下单上限%d", max)
-)
-
 type orders struct {
-	max     int // 最大下单成功订单数量
-	current int // 当前下单成功数量
 	dao     dao.OrderMatchService
 	client  pb.WechatClient
 	doStart func()
@@ -45,7 +32,6 @@ type orders struct {
 
 func NewOrders(dao dao.OrderMatchService, logger *log.Logger) *orders {
 	o := &orders{
-		max:    max,
 		logger: logger.With(zap.String("模块名", "订单管理")),
 		dao:    dao,
 	}
@@ -68,93 +54,54 @@ func NewOrders(dao dao.OrderMatchService, logger *log.Logger) *orders {
 
 func (o *orders) String() string {
 	builder := &strings.Builder{}
-	_, err := fmt.Fprintf(builder, "上限[%d],当前数量[%d],未匹配[%s],已匹配[%s]", o.max, o.current, o.unmatchedString(), o.matchedString())
+	unmatchedCount, unmatched := o.unmatchedString()
+	matchedCount, matched := o.matchedString()
+	_, err := fmt.Fprintf(builder, "未匹配数量[%d],已匹配数量[%d],未匹配[%s],已匹配[%s]", unmatchedCount, matchedCount, unmatched, matched)
 	if err == nil {
 		return builder.String()
 	}
 	return err.Error()
 }
 
-func (o *orders) unmatchedString() string {
-	all, err := o.dao.UnmatchGetAll(context.Background())
+func (o *orders) unmatchedString() (int, string) {
+	unmatch, err := o.dao.GetAllUnmatch(context.Background())
 	if err != nil {
 		o.logger.Error("unmatchedString", zap.Error(err))
-		return err.Error()
+		return 0, err.Error()
 	}
-	return strings.Join(all, ",")
+	strs := make([]string, 0, len(unmatch))
+	for _, order := range unmatch {
+		strs = append(strs, fmt.Sprintf("%s-%d-%d-%s-%s-%s-%s", order.ID, order.ItemID, order.AdzoneID, order.Title, order.UpdateTime.String(), order.TrendInfo.TKL, order.Status.String()))
+	}
+	return len(unmatch), strings.Join(strs, ",")
 }
 
-func (o *orders) matchedString() string {
-	matched, err := o.dao.QueryOrderByStatus(context.Background(), tools.Time{}, tools.Now(), model.OrderPaid, model.OrderFinish)
+func (o *orders) matchedString() (int, string) {
+	matched, err := o.dao.MatchGetAll(context.Background())
 	if err != nil {
 		o.logger.Error("matchedString", zap.Error(err))
-		return err.Error()
+		return 0, err.Error()
 	}
 	strs := make([]string, 0, len(matched))
 	for _, order := range matched {
-		strs = append(strs, fmt.Sprintf("%s-%s-%s", order.ID, order.CreateTime, order.Status.String()))
+		strs = append(strs, fmt.Sprintf("%s-%s-%s-%d-%s-%s", order.ID, order.Title, order.TradeParentID, order.AlipayTotalPrice, order.PaidTime.String(), order.Status.String()))
 	}
-	return strings.Join(strs, ",")
+	return len(matched), strings.Join(strs, ",")
 }
 
 func (o *orders) Match(orders []TbkOrderDetailsGetResult) {
-	o.logger.Warn("开始查单", zap.Any("remoteOrder", orders))
-	unmatched := make([]TbkOrderDetailsGetResult, 0, len(orders))
-	localOrder := map[string]*model.Order{}
-	tradeParentIDs := make([]string, 0, len(orders))
-	for _, order := range orders {
-		tradeParentIDs = append(tradeParentIDs, order.TradeParentID)
-	}
-	results, err := o.dao.QueryOrderByTradeParentID(context.Background(), tradeParentIDs, true)
-	if err != nil {
-		o.logger.Error("Match", zap.Error(err), zap.Any("remoteOrder", orders))
-		return
-	}
-	for _, order := range results {
-		localOrder[order.TradeParentID] = order
-	}
-
-	changedTradeParentIDs := make([]string, 0, len(orders)/2)
-	for i, remoteOrder := range orders {
-		if matchedOrder, matched := localOrder[remoteOrder.TradeParentID]; matched { // 已匹配的单，更新更新时间和状态
-			if int(matchedOrder.Status) != (remoteOrder.TkStatus) {
-				if err := o.dao.UpdateSingleOrderGeneric(context.Background(), matchedOrder.ID, nil, bson.M{
-					dao.SET: bson.M{
-						model.UpdateTimeField:       tools.Now(),
-						model.StatusField:           model.OrderStatus(remoteOrder.TkStatus),
-						model.AlipayTotalPriceField: remoteOrder.AlipayTotalPrice,
-						model.PaidTimeField:         remoteOrder.TkPaidTime,
-					},
-				}); err != nil {
-					o.logger.Error("Match", zap.Error(err), zap.Any("localOrder", matchedOrder), zap.Any("remoteOrder", remoteOrder))
-					continue
-				}
-				changedTradeParentIDs = append(changedTradeParentIDs, matchedOrder.TradeParentID)
-			}
-			o.logger.Info("进入到已匹配的单，更新更新时间和状态", zap.Any("localOrder", matchedOrder), zap.Any("remoteOrder", remoteOrder))
-		} else { // 未匹配的单，添加到未匹配队列
-			unmatched = append(unmatched, orders[i])
-		}
-	}
-	_, err = o.dao.DelFromOrderCache(context.Background(), changedTradeParentIDs)
-	if err != nil {
-		o.logger.Error("Match", zap.Error(err), zap.Strings("changedTradeParentIDs", changedTradeParentIDs))
-	}
-	o.MatchingUnmatched(unmatched)
+	o.logger.Info("开始查单", zap.Any("remoteOrder", orders))
+	o.MatchingUnmatched(orders)
 	return
 }
 
-func (o *orders) Add(ctx context.Context, order *model.Order) (err error) {
+func (o *orders) Add(ctx context.Context, order *model.Order, nonce string) (err error) {
 	o.logger.Info("添加本地订单记录", zap.Int64("渠道ID", order.AdzoneID), zap.String("用户ID", order.UserID), zap.Int64("商品ID", order.ItemID))
-	if o.current == o.max {
-		return errFill
-	}
-	ok, err := o.dao.SetToUnmatch(ctx, order.ItemID, order.AdzoneID, order)
+	ok, err := o.dao.SetToUnmatch(ctx, order.ItemID, order.AdzoneID, order, nonce)
 	if err != nil || !ok {
 		err = fmt.Errorf("orders Add fail: %w", err)
 		return err
 	}
-	o.current++
 	return
 }
 
@@ -174,17 +121,16 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 			o.logger.Info("订单本地不存在，跳过")
 			continue
 		}
-		localOrder, err := o.dao.UnmatchGet(context.Background(), remoteOrder.ItemID, remoteOrder.AdzoneID)
+		if remoteOrder.AlipayTotalPrice == "" {
+			o.logger.Info("订单还没有付款金额，跳过")
+			continue
+		}
+		localOrder, err := o.dao.GetUnmatch(context.Background(), remoteOrder.ItemID, remoteOrder.AdzoneID)
 		if err != nil {
 			o.logger.Error("MatchingUnmatched", zap.Error(err))
 			continue
 		}
-		o.logger.Info("MatchingUnmatched 逐个遍历", zap.Any("远程订单", remoteOrder), zap.Any("本地订单", localOrder))
-		if !isRecent(remoteOrder.ClickTime, localOrder.UpdateTime) {
-			o.logger.Info("订单本地不匹配,跳过")
-			continue
-		}
-		o.logger.Info("订单已经匹配", zap.Any("查单结果", remoteOrder), zap.Any("本地", localOrder))
+		o.logger.Info("订单已经匹配", zap.Any("远程订单", remoteOrder), zap.Any("本地订单", localOrder))
 		if err = o.makeMatched(localOrder, remoteOrder); err != nil {
 			o.logger.Error("MatchingUnmatched", zap.Error(err))
 			continue
@@ -192,34 +138,31 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 	}
 }
 
-func isRecent(clickTime, localTime tools.Time) bool {
-	distance := clickTime.Sub(localTime).Seconds()
-	return distance <= 864000
-}
-
 func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetailsGetResult) (err error) {
 	if err = localOrder.MakeMatched(remoteOrder.ClickTime, remoteOrder.TkCreateTime, remoteOrder.TkStatus, remoteOrder.TradeID, remoteOrder.TradeParentID, remoteOrder.ItemNum, remoteOrder.PubSharePreFee); err != nil {
 		o.logger.Error("makeMatched", zap.Error(err), zap.Any("RemoteOrder", remoteOrder), zap.Any("LocalOrder", localOrder))
+		return err
 	}
 	err = o.dao.Insert(context.Background(), localOrder)
 	if err != nil {
 		return err
 	}
-	// 删除匹配队列里的键
+	// 一定要放进匹配队列  不然数据库存的只是一个没有状态变更的空壳
 	if err = tools.Retry(func() (err error, mayRetry bool) {
-		_, err = o.dao.DelFromUnmatchMap(context.Background(), localOrder.ItemID, localOrder.AdzoneID)
+		_, err = o.dao.DelFromUnmatchAndSetToMatch(context.Background(), localOrder)
 		return
 	}); err != nil {
-		return fmt.Errorf("makeMatched Retry del key distance > 180s, errors: (%w)", err)
+		return fmt.Errorf("makeMatched Retry DelFromUnmatchAndSetToMatch  distance > 180s, errors: (%w)", err)
 	}
-	o.TemplateMsgSend(context.Background(), &pb.TemplateMsgSendReq{
+	_, _ = o.TemplateMsgSend(context.Background(), &pb.TemplateMsgSendReq{
 		UserID:           localOrder.UserID,
 		OrderID:          localOrder.TradeParentID,
 		Title:            localOrder.Title,
 		PaidTime:         localOrder.PaidTime.String(),
-		AlipayTotalPrice: strconv.FormatInt(localOrder.AlipayTotalPrice, 10),
-		Rebate:           strconv.FormatInt(localOrder.Rebate, 10),
+		AlipayTotalPrice: strconv.FormatFloat(float64(localOrder.AlipayTotalPrice)/100, 'f', -1, 64),
+		Rebate:           strconv.FormatFloat(float64(localOrder.Rebate)/100, 'f', -1, 64),
 	})
+	o.logger.Info("查单队列", zap.String("状态", o.String()))
 	return
 }
 

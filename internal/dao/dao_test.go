@@ -7,6 +7,7 @@ import (
 	"taobaoke/internal/model"
 	"taobaoke/tools"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -109,11 +110,34 @@ func TestDao_MatchGetAll(t *testing.T) {
 	})
 
 }
-
-func TestDao_SetToMatch(t *testing.T) {
-	Convey("设置键值至匹配map", t, func() {
-		_, err := d.DelFromUnmatchAndSetToMatch(ctx, &model.Order{})
+func TestDao_FindOrderByID(t *testing.T) {
+	Convey("从DB中获取Order", t, func() {
+		order, err := d.FindOrderByID(ctx, "rd2NH6rYM")
 		So(err, ShouldBeNil)
+		So(order, ShouldNotBeNil)
+	})
+}
+
+func TestDao_DelFromUnmatchAndSetToMatch(t *testing.T) {
+	Convey("从未匹配队列中删除并更新到已匹配队列", t, func() {
+		order, err := d.FindOrderByID(ctx, "rd2NH6rYM")
+		So(err, ShouldBeNil)
+		So(order, ShouldNotBeNil)
+		ok, err := d.DelFromUnmatchAndSetToMatch(ctx, order)
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeTrue)
+
+	})
+}
+func TestDao_QueryOrderByStatus(t *testing.T) {
+	Convey("获取45天内DB中所有未完成的订单", t, func() {
+		now := tools.Now()
+		unfinishOrders, err := d.QueryOrderByStatus(context.Background(), now.Add(-time.Hour*24*45), now, model.OrderPaid, model.OrderFinish)
+		So(err, ShouldBeNil)
+		for _, order := range unfinishOrders {
+			_, err = d.HSetNXToMatch(context.Background(), order)
+			So(err, ShouldBeNil)
+		}
 	})
 }
 

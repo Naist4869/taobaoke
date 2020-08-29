@@ -56,6 +56,7 @@ type OrderMatchService interface {
 	MatchGetAll(ctx context.Context) ([]*model.Order, error)
 	ExistInUnmatch(ctx context.Context, itemID, adZoneID int64) (exist bool, err error)
 	DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error)
+	HSetNXToMatch(ctx context.Context, order *model.Order) (ok bool, err error)
 	DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n int64, err error)
 }
 

@@ -270,3 +270,15 @@ func (d *dao) DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Orde
 	ok = del.Val() == 1 && set.Val() == 1
 	return
 }
+func (d *dao) HSetNXToMatch(ctx context.Context, order *model.Order) (ok bool, err error) {
+	marshal, err := json.Marshal(order)
+	if err != nil {
+		err = fmt.Errorf("HSetNXToMatch failed error: (%w),order: %v", err, order)
+		return
+	}
+	ok, err = d.redis.HSetNX(ctx, _matchMap, order.TradeParentID, marshal).Result()
+	if err != nil {
+		err = fmt.Errorf("HSetNXToMatch failed error: (%w),order: %v", err, order)
+	}
+	return
+}

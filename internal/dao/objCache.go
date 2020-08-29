@@ -65,13 +65,9 @@ func (d *dao) QueryNotWithDrawOrderByUserID(ctx context.Context, id string) (res
 	return orders, nil
 }
 func (d *dao) QueryOrderByStatus(ctx context.Context, start, end tools.Time, status ...model.OrderStatus) ([]*model.Order, error) {
-	var query bson.M
+	query := bson.M{model.CreateTimeField: bson.M{GTE: start, LTE: end}}
 	if len(status) > 0 {
-		query = bson.M{model.CreateTimeField: bson.M{GTE: start, LTE: end},
-			model.StatusField: bson.M{IN: status},
-		}
-	} else {
-		query = bson.M{model.CreateTimeField: bson.M{GTE: start, LTE: end}}
+		query[model.StatusField] = bson.M{IN: status}
 	}
 	d.logger.Info("订单查询", ZapBsonM("条件", query))
 	orders, _, err := d.orderClient.queryOrder(ctx, query, []string{model.CreateTimeField}, 0, 0, nil, nil)

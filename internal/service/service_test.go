@@ -185,7 +185,7 @@ func TestService_analyzingKey(t *testing.T) {
 
 func TestService_KeyConvert(t *testing.T) {
 	convertKey, err := testService.KeyConvert(ctx, &pb.KeyConvertReq{
-		FromKey: `$nniWccD1nru$`,
+		FromKey: `₤QHUEcd1NPHR₤`,
 		UserID:  "1",
 	})
 	require.NoError(t, err)

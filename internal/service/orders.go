@@ -9,7 +9,6 @@ import (
 	pb "taobaoke/api"
 	"taobaoke/internal/dao"
 	"taobaoke/internal/model"
-	"taobaoke/tools"
 	"time"
 
 	"github.com/go-kratos/kratos/pkg/net/rpc/warden"
@@ -147,13 +146,11 @@ func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetail
 	if err != nil {
 		return err
 	}
-	// 一定要放进匹配队列  不然数据库存的只是一个没有状态变更的空壳
-	if err = tools.Retry(func() (err error, mayRetry bool) {
-		_, err = o.dao.DelFromUnmatchAndSetToMatch(context.Background(), localOrder)
-		return
-	}); err != nil {
-		return fmt.Errorf("makeMatched Retry DelFromUnmatchAndSetToMatch  distance > 180s, errors: (%w)", err)
+
+	if _, err = o.dao.DelFromUnmatchAndSetToMatch(context.Background(), localOrder); err != nil {
+		o.logger.Error("makeMatched", zap.Error(err))
 	}
+
 	_, _ = o.TemplateMsgSend(context.Background(), &pb.TemplateMsgSendReq{
 		UserID:           localOrder.UserID,
 		OrderID:          localOrder.TradeParentID,

@@ -70,6 +70,17 @@ func New(d dao.Dao, l *log.Logger, client *bm.Client, orders *orders) (s *Servic
 	}
 	cf = s.Close
 	err = paladin.Watch("application.toml", s.ac)
+	// 查询DB中所有未完成的单添加到匹配队列
+	now := tools.Now()
+	if unfinishOrders, err := s.dao.QueryOrderByStatus(context.Background(), now.Add(-time.Hour*24*45), now, model.OrderPaid, model.OrderFinish); err != nil {
+		s.logger.Error("Service初始化", zap.Error(err))
+	} else {
+		for _, order := range unfinishOrders {
+			if _, err = s.dao.HSetNXToMatch(context.Background(), order); err != nil {
+				s.logger.Error("Service初始化", zap.Error(err))
+			}
+		}
+	}
 	go s.Monitor()
 	go s.MonitorMarch()
 	return
@@ -133,18 +144,12 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 		return
 	}
 	nonce := tools.MakeNonce()
-	for adZoneID != 0 {
-		s.logger.Info("KeyConvert", zap.String("动作", "更换AdZoneID"), zap.Int64("AdZoneID", adZoneID))
-		// 先占位置 设置过期时间5s  因为微信消息最大回复时间为5s
-		ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
-		if err != nil || !ok {
-			// 没位置了换adZoneID  接着尝试占位置
-			if adZoneID = getadZoneID(); adZoneID == 0 {
-				s.logger.Error("添加商品至未匹配队列失败", zap.Error(err), zap.String("原因", "没有可用的AdZoneID了"))
-				return nil, fmt.Errorf("请稍后再试")
-			}
-			s.logger.Info("KeyConvert", zap.String("动作", "更换AdZoneID"), zap.Int64("新AdZoneID", adZoneID))
+	for ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce); err != nil || ok != true; adZoneID = getadZoneID() {
+		if adZoneID == 0 {
+			err = fmt.Errorf("请稍后再试:(%w)", err)
+			return nil, err
 		}
+		s.logger.Info("KeyConvert", zap.String("动作", "更换AdZoneID"), zap.Int64("新AdZoneID", adZoneID))
 	}
 
 	order := model.NewOrder(id, req.UserID, adZoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType, r.Price, r.ReservePrice, r.Coupon)

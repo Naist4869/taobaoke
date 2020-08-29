@@ -88,7 +88,7 @@ func (s *Service) GetSession() string {
 }
 func (s *Service) GenGetAdZoneID() func() int64 {
 	var sliceStr []int64
-	s.ac.Get("adzoneID").Slice(&sliceStr)
+	_ = s.ac.Get("adzoneID").Slice(&sliceStr)
 	i := len(sliceStr)
 	return func() int64 {
 		if i > 0 {
@@ -100,7 +100,7 @@ func (s *Service) GenGetAdZoneID() func() int64 {
 }
 func (s *Service) GetDefaultAdZoneID() int64 {
 	var sliceStr []int64
-	s.ac.Get("adzoneID").Slice(&sliceStr)
+	_ = s.ac.Get("adzoneID").Slice(&sliceStr)
 	if len(sliceStr) > 0 {
 		return sliceStr[0]
 	}
@@ -141,8 +141,7 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 			// 没位置了换adZoneID  接着尝试占位置
 			if adZoneID = getadZoneID(); adZoneID == 0 {
 				s.logger.Error("添加商品至未匹配队列失败", zap.Error(err), zap.String("原因", "没有可用的AdZoneID了"))
-				err = fmt.Errorf("请稍后再试")
-				return
+				return nil, fmt.Errorf("请稍后再试")
 			}
 			s.logger.Info("KeyConvert", zap.String("动作", "更换AdZoneID"), zap.Int64("新AdZoneID", adZoneID))
 		}
@@ -334,7 +333,7 @@ func (s *Service) QueryRemoteOrderByTradeParentID(ctx context.Context, orders []
 
 // Ping ping the resource.
 func (s *Service) Ping(ctx context.Context, e *empty.Empty) (*empty.Empty, error) {
-	return &empty.Empty{}, s.dao.Ping(ctx)
+	return e, s.dao.Ping(ctx)
 }
 
 // Close close the resource.

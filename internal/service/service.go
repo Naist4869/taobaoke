@@ -145,11 +145,12 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 	}
 	nonce := tools.MakeNonce()
 	for ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce); err != nil || ok != true; adZoneID = getadZoneID() {
+		s.logger.Info("KeyConvert", zap.Error(err), zap.Bool("OK", ok), zap.Int64("新AdZoneID", adZoneID))
 		if adZoneID == 0 {
 			err = fmt.Errorf("请稍后再试:(%w)", err)
 			return nil, err
 		}
-		s.logger.Info("KeyConvert", zap.String("动作", "更换AdZoneID"), zap.Int64("新AdZoneID", adZoneID))
+		ok, err = s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
 	}
 
 	order := model.NewOrder(id, req.UserID, adZoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType, r.Price, r.ReservePrice, r.Coupon)

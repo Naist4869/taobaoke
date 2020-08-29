@@ -35,7 +35,7 @@ type OrderDataService interface {
 type OrderMonitor interface {
 	FindOrderByID(ctx context.Context, id string) (order *model.Order, err error)
 	UpdateOrderFailedStatus(ctx context.Context, id string, tradeParentID string) (err error)
-	UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error)
+	UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int, updateStatus bool) (err error)
 	UpdateManyWithDrawStatus(ctx context.Context, ids []string) (err error)
 	FindOneAndUpdateOrderBalanceStatus(ctx context.Context, id string, tradeParentID string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (order *model.Order, err error)
 }
@@ -114,9 +114,9 @@ func (oc *OrderClient) Init(client *mongo.Client, db string) error {
 		}
 		if err := gdbc.EnsureIndex(collection, []gdbc.Index{
 			{
-				Name: "订单ID",
+				Name: "订单编号",
 				Data: mongo.IndexModel{
-					Keys:    bson.M{model.IDField: 1},
+					Keys:    bson.M{model.TradeParentIDField: 1},
 					Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{model.DeletedField: false}),
 				},
 				Version: 1,
@@ -139,8 +139,8 @@ func (oc *OrderClient) Insert(ctx context.Context, o *model.Order) (err error) {
 	if _, err = oc.collections[model.DBOrderKey].InsertOne(ctx, *o); err != nil {
 		if IsInsertDuplicateError(err) {
 			errMsg := err.Error()
-			strings.Contains(errMsg, "index: 订单ID")
-			err = errors.New("订单ID已存在")
+			strings.Contains(errMsg, "index: 订单编号")
+			err = errors.New("订单编号已存在")
 			return
 		}
 		err = errors.New("保存订单信息失败")
@@ -275,7 +275,9 @@ func (oc *OrderClient) updateOrderFailedStatus(ctx context.Context, id string) (
 	oc.Logger.Info("UpdateOrderFailedStatus", zap.String("id", id), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
 	return
 }
-func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error) {
+
+func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int, updateStatus bool) (err error) {
+
 	alipayTotalPrice, err := strconv.ParseFloat(AlipayTotalPrice, 64)
 	if err != nil {
 		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
@@ -291,7 +293,7 @@ func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, pai
 		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
 		return err
 	}
-	calculateCommission := alipayTotalPrice * float64(ItemNum) * incomeRate / 10000
+	calculateCommission := alipayTotalPrice * float64(ItemNum) * incomeRate / 100
 	// 保留两位小数四舍五入
 	roundCommission := math.Round(calculateCommission*100) / 100
 	if roundCommission != rebate {
@@ -303,14 +305,21 @@ func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, pai
 		model.IDField:      id,
 		model.DeletedField: false,
 	}
-	operation := bson.M{
-		SET: bson.M{
+	operation := bson.M{}
+	if updateStatus {
+		operation[SET] = bson.M{
 			model.AlipayTotalPriceField: int64(alipayTotalPrice * 100),
 			model.PaidTimeField:         paidTime,
 			model.UpdateTimeField:       tools.Now(),
 			model.StatusField:           model.OrderPaid,
-		},
+		}
+	} else {
+		operation[SET] = bson.M{
+			model.AlipayTotalPriceField: int64(alipayTotalPrice * 100),
+			model.PaidTimeField:         paidTime,
+		}
 	}
+
 	updateResult, err := oc.collections[model.DBOrderKey].UpdateOne(ctx, filter, operation)
 	if err != nil {
 		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err), ZapBsonM("filter", filter))

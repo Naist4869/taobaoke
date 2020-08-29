@@ -125,9 +125,12 @@ func TestService_TbkDgMaterialOptional(t *testing.T) {
 }
 
 func TestOpenXLS(t *testing.T) {
-	OpenXLS()
+	OpenXLS("OrderDetail-2020-06-13.xls")
 }
-
+func TestService_XlsOrdersToOrders(t *testing.T) {
+	xlsOrders := OpenXLS("OrderDetail-2020-08-29 (1).xls")
+	testService.XlsOrdersToOrders(xlsOrders)
+}
 func TestService_HighCommission(t *testing.T) {
 	result, err := testService.HighCommission(ctx, 608813238220)
 	require.NoError(t, err)
@@ -135,7 +138,7 @@ func TestService_HighCommission(t *testing.T) {
 }
 
 func TestService_QueryOrder(t *testing.T) {
-	parseTime, err := tools.ParseTimeInLength("2020-08-28 00:21:28")
+	parseTime, err := tools.ParseTimeInLength("2020-06-11 07:34:35")
 	if err != nil {
 		t.Fatal(err)
 	}

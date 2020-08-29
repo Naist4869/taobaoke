@@ -239,7 +239,7 @@ func (s *Service) MonitorMarch() {
 				var err error
 				switch status {
 				case model.OrderPaid:
-					err = s.dao.UpdateOrderPaidStatus(ctx, id, remoteOrder.TkPaidTime, remoteOrder.AlipayTotalPrice, remoteOrder.IncomeRate, remoteOrder.PubSharePreFee, remoteOrder.ItemNum)
+					err = s.dao.UpdateOrderPaidStatus(ctx, id, remoteOrder.TkPaidTime, remoteOrder.AlipayTotalPrice, remoteOrder.IncomeRate, remoteOrder.PubSharePreFee, remoteOrder.ItemNum, true)
 				case model.OrderFailed:
 					err = s.dao.UpdateOrderFailedStatus(ctx, id, remoteOrder.TradeParentID)
 				case model.OrderBalance:
@@ -595,19 +595,110 @@ func (s *Service) UpdateToUnmatch(ctx context.Context, itemID, adZoneID int64, o
 	return s.dao.UpdateFromUnmatch(ctx, itemID, adZoneID, order)
 }
 
-func OpenXLS() {
-	if xlFile, err := xls.Open("OrderDetail-2020-06-13.xls", "utf-8"); err == nil {
+func OpenXLS(fileName string) []*model.XLSOrder {
+	xlsOrders := make([]*model.XLSOrder, 0)
+	if xlFile, err := xls.Open(fileName, "utf-8"); err == nil {
 		if sheet1 := xlFile.GetSheet(0); sheet1 != nil {
 			fmt.Print("Total Lines ", sheet1.MaxRow, sheet1.Name)
-			for row := 0; row <= int(sheet1.MaxRow); row++ {
-				currentRow := sheet1.Row(row)
-				for col := 0; col < currentRow.LastCol(); col++ {
-					fmt.Printf("%s ", currentRow.Col(col))
+			row := sheet1.Row(0)
+			var b strings.Builder
+			buildMap := map[string]int{}
+			for col := 0; col < row.LastCol(); col++ {
+				if _, exist := model.XlsToJsonMap[row.Col(col)]; exist {
+					buildMap[row.Col(col)] = col
 				}
-				fmt.Println()
+			}
+
+			for row := 1; row <= int(sheet1.MaxRow); row++ {
+				b.WriteString("{")
+				currentRow := sheet1.Row(row)
+				for name, n := range buildMap {
+					k := model.XlsToJsonMap[name]
+					v := currentRow.Col(n)
+					b.WriteString("\"" + k + "\":")
+					if f, exist := model.XlsConvertRuleMap[name]; exist {
+						result := f(v)
+						if result == "number" {
+							if v == "" {
+								v = "0.00"
+							}
+							b.WriteString(v + ",")
+							continue
+						}
+						b.WriteString("\"" + result + "\",")
+					} else {
+						b.WriteString("\"" + v + "\",")
+					}
+				}
+				b.WriteString(`"aa":"aa"`)
+				b.WriteString("}")
+				fmt.Println(b.String())
+				v := &model.XLSOrder{}
+				if err := json.Unmarshal([]byte(b.String()), v); err != nil {
+					continue
+				}
+				xlsOrders = append(xlsOrders, v)
+				b.Reset()
+
 			}
 		}
 	}
+	return xlsOrders
+}
+func (s *Service) XlsOrdersToOrders(xlsOrders []*model.XLSOrder) {
+	for _, xlsOrder := range xlsOrders {
+		id, err := s.idGenerator.Generate()
+		if err != nil {
+			continue
+		}
+		adZoneID, err := strconv.ParseInt(xlsOrder.AdzoneID, 10, 64)
+		if err != nil {
+			continue
+		}
+		itemID, err := strconv.ParseInt(xlsOrder.ItemID, 10, 64)
+		if err != nil {
+			continue
+		}
+		shopType, err := strconv.Atoi(xlsOrder.OrderType)
+		if err != nil {
+			continue
+		}
+		status, err := strconv.Atoi(xlsOrder.TkStatus)
+		if err != nil {
+			continue
+		}
+		// userID 为空  有人掉单了来问的时候补
+		order := model.NewOrder(id, "", adZoneID, xlsOrder.ItemTitle, itemID, xlsOrder.ItemImg, xlsOrder.SellerShopTitle, shopType, int64(xlsOrder.ItemPrice*100), 0, 0)
+		err = order.MakeMatched(xlsOrder.ClickTime, xlsOrder.TkCreateTime, status, xlsOrder.TradeID, xlsOrder.TradeParentID, xlsOrder.ItemNum, xlsOrder.PubSharePreFee)
+		if err != nil {
+			continue
+		}
+		err = s.dao.Insert(context.Background(), order)
+		if err != nil {
+			continue
+		}
+		updateStatus := true
+		switch model.OrderStatus(status) {
+		case model.OrderBalance:
+			if _, err := s.dao.FindOneAndUpdateOrderBalanceStatus(context.Background(), order.ID, order.TradeParentID, xlsOrder.TkEarningTime, xlsOrder.TotalCommissionFee, xlsOrder.PayPrice, s.GetSalaryScale()); err != nil {
+				s.logger.Error("XlsOrdersToOrders", zap.Error(err))
+				continue
+			}
+			updateStatus = false
+			fallthrough
+		case model.OrderPaid:
+			if err := s.dao.UpdateOrderPaidStatus(context.Background(), order.ID, xlsOrder.TkPaidTime, xlsOrder.AlipayTotalPrice, xlsOrder.IncomeRate, xlsOrder.PubSharePreFee, xlsOrder.ItemNum, updateStatus); err != nil {
+				s.logger.Error("XlsOrdersToOrders", zap.Error(err))
+				continue
+			}
+		case model.OrderFailed:
+			if err := s.dao.UpdateOrderFailedStatus(context.Background(), order.ID, order.TradeParentID); err != nil {
+				s.logger.Error("XlsOrdersToOrders", zap.Error(err))
+				continue
+			}
+		}
+	}
+	return
 }
 
 func (s *Service) HighCommission(ctx context.Context, numIid int64) (result HighCommissionResult, err error) {

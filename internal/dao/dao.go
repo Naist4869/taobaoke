@@ -61,8 +61,8 @@ func (d *dao) UpdateOrderFailedStatus(ctx context.Context, id string, tradeParen
 	return
 }
 
-func (d *dao) UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error) {
-	return d.orderClient.updateOrderPaidStatus(ctx, id, paidTime, AlipayTotalPrice, IncomeRate, pubSharePreFee, ItemNum)
+func (d *dao) UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int, updateStatus bool) (err error) {
+	return d.orderClient.updateOrderPaidStatus(ctx, id, paidTime, AlipayTotalPrice, IncomeRate, pubSharePreFee, ItemNum, updateStatus)
 }
 
 func (d *dao) UpdateManyWithDrawStatus(ctx context.Context, ids []string) (err error) {

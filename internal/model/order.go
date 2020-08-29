@@ -32,17 +32,30 @@ const (
 type OrderStatus int
 
 const (
-	OrderBalance = 3
-	OrderPaid    = 12
-	OrderFailed  = 13
-	OrderFinish  = 14
+	OrderBalance OrderStatus = 3
+	OrderPaid    OrderStatus = 12
+	OrderFailed  OrderStatus = 13
+	OrderFinish  OrderStatus = 14
 )
 
 var OrderStatusMap = map[OrderStatus]string{
-	OrderBalance: "订单结算",
-	OrderPaid:    "订单付款",
-	OrderFailed:  "订单失效",
+	OrderBalance: "已结算",
+	OrderPaid:    "已付款",
+	OrderFailed:  "已失效",
 	OrderFinish:  "订单成功",
+}
+
+type ShopType int
+
+const (
+	ShopTaoBao  ShopType = 0
+	ShopTianMao ShopType = 1
+	//ShopJuHuaSuan
+)
+
+var OrderTypeMap = map[ShopType]string{
+	ShopTaoBao:  "淘宝",
+	ShopTianMao: "天猫",
 }
 
 func (s OrderStatus) String() string {

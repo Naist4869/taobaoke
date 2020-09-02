@@ -74,11 +74,26 @@ type XLSOrder struct {
 	AdzoneID                           string     `json:"adzone_id"`
 	AdzoneName                         string     `json:"adzone_name"`
 	TkCommissionPreFeeForMediaPlatform float64    `json:"tk_commission_pre_fee_for_media_platform"`
-	ItemPrice                          float64    `json:"item_price"`
+	ItemPrice                          string     `json:"item_price"`
 	TradeID                            string     `json:"trade_id"`
 	PayPrice                           string     `json:"pay_price"`
 	PubShareRate                       string     `json:"pub_share_rate"`
 	AlimamaRate                        string     `json:"alimama_rate"`
+}
+
+func (x *XLSOrder) FillContext() *UpdateArgument {
+	status, _ := strconv.Atoi(x.TkStatus)
+	return &UpdateArgument{
+		PaidTime:           x.TkPaidTime,
+		EarningTime:        x.TkEarningTime,
+		Status:             OrderStatus(status),
+		AlipayTotalPrice:   x.AlipayTotalPrice,
+		IncomeRate:         x.IncomeRate,
+		PubSharePreFee:     x.PubSharePreFee,
+		ItemNum:            x.ItemNum,
+		TotalCommissionFee: x.TotalCommissionFee,
+		PayPrice:           x.PayPrice,
+	}
 }
 
 var XlsConvertRuleMap = map[string]func(string) string{
@@ -92,7 +107,6 @@ var XlsConvertRuleMap = map[string]func(string) string{
 	"内容专项服务费率":  removePercent,
 	"收入比率":      removePercent,
 	"商品数量":      isNumber,
-	"商品单价":      isNumber,
 	"补贴金额":      isNumber,
 	"技术服务费":     isNumber,
 	"结算预估收入":    isNumber,

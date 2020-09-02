@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"taobaoke/internal/model"
 	"taobaoke/tools"
 )
 
@@ -22,16 +23,14 @@ type analyzingKeyResp struct {
 	Msg       string `json:"msg"`
 }
 type convertMyKeyResult struct {
-	AdzoneID     int64
-	Title        string
-	ItemID       int64
-	PicURL       string
-	ShopName     string
-	ShopType     int
-	Price        int64
-	Rebate       int64
-	Coupon       int64
-	ReservePrice int64
+	Title    string
+	ItemID   int64
+	PicURL   string
+	ShopName string
+	ShopType int
+	Price    int64
+	Rebate   int64
+	Coupon   int64
 }
 type HighCommissionResp struct {
 	Result struct {
@@ -319,6 +318,19 @@ func (t *tbkOrderDetailsGetResp) Error() error {
 		return NewQueryListEmptyError()
 	}
 	return nil
+}
+func (t *TbkOrderDetailsGetResult) FillContext() *model.UpdateArgument {
+	return &model.UpdateArgument{
+		PaidTime:           t.TkPaidTime,
+		EarningTime:        t.TkEarningTime,
+		Status:             model.OrderStatus(t.TkStatus),
+		AlipayTotalPrice:   t.AlipayTotalPrice,
+		IncomeRate:         t.IncomeRate,
+		PubSharePreFee:     t.PubSharePreFee,
+		ItemNum:            t.ItemNum,
+		TotalCommissionFee: t.TotalCommissionFee,
+		PayPrice:           t.PayPrice,
+	}
 }
 
 func (t TbkScInvitecodeReq) Code() int {

@@ -144,15 +144,6 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 		return
 	}
 	nonce := tools.MakeNonce()
-	//for ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce); err != nil || ok != true; adZoneID = getadZoneID() {
-	//	s.logger.Info("KeyConvert", zap.Error(err), zap.Bool("OK", ok), zap.Int64("AdZoneID", adZoneID))
-	//	if adZoneID == 0 {
-	//		err = fmt.Errorf("请稍后再试:(%w)", err)
-	//		return nil, err
-	//	}
-	//	ok, err = s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
-	//}
-
 	for {
 		ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
 		if err != nil || ok != true {
@@ -166,7 +157,7 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 		break
 	}
 
-	order := model.NewOrder(id, req.UserID, adZoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType, r.Price, r.ReservePrice, r.Coupon)
+	order := model.NewOrder(id, req.UserID, adZoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType)
 	if err = s.orders.Add(ctx, order, nonce); err != nil {
 		return
 	}
@@ -175,8 +166,10 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 	query.Add("itemID", strconv.FormatInt(order.ItemID, 10))
 	query.Add("adZoneID", strconv.FormatInt(order.AdzoneID, 10))
 	rebate := strconv.FormatFloat(float64(r.Rebate)/100, 'f', -1, 64)
-	coupon := strconv.FormatFloat(float64(order.Coupon)/100, 'f', -1, 64)
-	price := strconv.FormatFloat(float64(order.Price-order.Coupon)/100, 'f', -1, 64)
+	coupon := strconv.FormatFloat(float64(r.Coupon)/100, 'f', -1, 64)
+	// 到手价  浮点数直接相加减会导致精度丢失
+	price := strconv.FormatFloat(float64(r.Price-r.Coupon)/100, 'f', -1, 64)
+
 	resp = &pb.KeyConvertResp{
 		Price:   price,
 		Rebate:  rebate,
@@ -236,20 +229,7 @@ func (s *Service) MonitorMarch() {
 			s.logger.Info("MonitorMarch", zap.String("动作", "开始检测远程订单状态"), zap.Any("localOrder", localOrder), zap.Any("remoteOrder", remoteOrder))
 			if localOrder.Status != status {
 				s.logger.Info("MonitorMarch", zap.String("动作", "检测到远程订单状态变更"), zap.Any("本地订单", localOrder), zap.Any("远程订单", remoteOrder))
-				var err error
-				switch status {
-				case model.OrderPaid:
-					err = s.dao.UpdateOrderPaidStatus(ctx, id, remoteOrder.TkPaidTime, remoteOrder.AlipayTotalPrice, remoteOrder.IncomeRate, remoteOrder.PubSharePreFee, remoteOrder.ItemNum, true)
-				case model.OrderFailed:
-					err = s.dao.UpdateOrderFailedStatus(ctx, id, remoteOrder.TradeParentID)
-				case model.OrderBalance:
-					_, err = s.dao.FindOneAndUpdateOrderBalanceStatus(ctx, id, remoteOrder.TradeParentID, remoteOrder.TkEarningTime, remoteOrder.TotalCommissionFee, remoteOrder.PayPrice, s.GetSalaryScale())
-				default:
-					s.logger.Error("MonitorMarch", zap.Int("未知的状态:", remoteOrder.TkStatus), zap.Any("远程订单", remoteOrder), zap.Any("本地订单", localOrder))
-				}
-				if err != nil {
-					s.logger.Error("MonitorMarch", zap.Error(err), zap.Any("远程订单", remoteOrder), zap.Any("本地订单", localOrder))
-				}
+				s.dao.UpdateStatus(ctx, localOrder, &remoteOrder)
 			}
 			return true
 		})
@@ -278,9 +258,11 @@ func (s *Service) WithDraw(ctx context.Context, req *pb.WithDrawReq) (*pb.WithDr
 		id := key.(string)
 		remoteOrder := value.(TbkOrderDetailsGetResult)
 		localOrder := ordersMap[id]
+		localOrder.SalaryScale = s.GetSalaryScale()
 		if !localOrder.Status.Balance() {
 			if model.OrderStatus(remoteOrder.TkStatus).Balance() {
-				afterOrder, err := s.dao.FindOneAndUpdateOrderBalanceStatus(ctx, id, localOrder.TradeParentID, remoteOrder.TkEarningTime, remoteOrder.TotalCommissionFee, remoteOrder.PayPrice, s.GetSalaryScale())
+				s.dao.UpdateStatus(ctx, localOrder, &remoteOrder)
+				afterOrder, err := s.dao.FindOrderByID(ctx, localOrder.ID)
 				if err != nil {
 					s.logger.Error("WithDraw", zap.Error(err), zap.Any("localOrder", localOrder), zap.Any("RemoteOrder", remoteOrder))
 					return true
@@ -461,24 +443,20 @@ func (s *Service) analyzingItem(ctx context.Context, title, picUrl string, adZon
 	if err != nil {
 		return
 	}
-	result.AdzoneID = adZoneID
 	for _, item := range materialResult {
 		index := strings.Index(item.PictURL, "uploaded")
 		if !strings.Contains(picUrl, item.PictURL[index+12:]) {
 			continue
 		}
 		var (
-			commissionRate              int64 = 1
-			price, reservePrice, coupon float64
+			commissionRate int64 = 1
+			price, coupon  float64
 		)
 		result.Title = item.Title
 		result.ItemID = item.ItemID
 		s.logger.Info("商品信息", zap.String("标题", item.Title), zap.Int64("商品ID", item.ItemID), zap.String("一口价", item.ReservePrice), zap.String("折扣价", item.ZkFinalPrice), zap.String("佣金比率", item.CommissionRate))
 		if price, err = strconv.ParseFloat(item.ZkFinalPrice, 64); err != nil {
 			s.logger.Error("analyzingItem", zap.Error(err), zap.String("折扣价", item.ZkFinalPrice))
-		}
-		if reservePrice, err = strconv.ParseFloat(item.ReservePrice, 64); err != nil {
-			s.logger.Error("analyzingItem", zap.Error(err), zap.String("一口价", item.ReservePrice))
 		}
 		if item.CouponAmount != "" {
 			if coupon, err = strconv.ParseFloat(item.CouponAmount, 64); err != nil {
@@ -492,7 +470,6 @@ func (s *Service) analyzingItem(ctx context.Context, title, picUrl string, adZon
 		result.ShopName = item.Nick
 		result.PicURL = item.PictURL
 		result.ShopType = item.UserType
-		result.ReservePrice = int64(reservePrice * 100)
 		result.Price = int64(price * 100)
 		// 商品价格-优惠券价格*佣金比率=预计收入佣金
 		result.Rebate = int64((price-coupon)*float64(commissionRate)) / 100
@@ -535,7 +512,7 @@ func (s *Service) GetTklByItemID(ctx context.Context, itemID int64, adZoneID int
 		parseUrl.Scheme = "https"
 		URL = parseUrl.String()
 		tpwdCreateResult, err = s.execTbkTpwdCreate(ctx, TbkTpwdCreateReq{
-			Text: "啊实打实的撒大苏打萨达萨达萨达是的观点",
+			Text: "内部淘口令",
 			URL:  URL,
 		})
 		if err != nil {
@@ -663,40 +640,18 @@ func (s *Service) XlsOrdersToOrders(xlsOrders []*model.XLSOrder) {
 		if err != nil {
 			continue
 		}
-		status, err := strconv.Atoi(xlsOrder.TkStatus)
-		if err != nil {
-			continue
-		}
 		// userID 为空  有人掉单了来问的时候补
-		order := model.NewOrder(id, "", adZoneID, xlsOrder.ItemTitle, itemID, xlsOrder.ItemImg, xlsOrder.SellerShopTitle, shopType, int64(xlsOrder.ItemPrice*100), 0, 0)
-		err = order.MakeMatched(xlsOrder.ClickTime, xlsOrder.TkCreateTime, status, xlsOrder.TradeID, xlsOrder.TradeParentID, xlsOrder.ItemNum, xlsOrder.PubSharePreFee)
+		order := model.NewOrder(id, "", adZoneID, xlsOrder.ItemTitle, itemID, xlsOrder.ItemImg, xlsOrder.SellerShopTitle, shopType)
+		err = order.MakeMatched(xlsOrder.ClickTime, xlsOrder.TkCreateTime, xlsOrder.TradeID, xlsOrder.TradeParentID, xlsOrder.PubSharePreFee, xlsOrder.ItemPrice, xlsOrder.TkStatus == "13")
 		if err != nil {
 			continue
 		}
+		order.SalaryScale = s.GetSalaryScale()
 		err = s.dao.Insert(context.Background(), order)
 		if err != nil {
 			continue
 		}
-		updateStatus := true
-		switch model.OrderStatus(status) {
-		case model.OrderBalance:
-			if _, err := s.dao.FindOneAndUpdateOrderBalanceStatus(context.Background(), order.ID, order.TradeParentID, xlsOrder.TkEarningTime, xlsOrder.TotalCommissionFee, xlsOrder.PayPrice, s.GetSalaryScale()); err != nil {
-				s.logger.Error("XlsOrdersToOrders", zap.Error(err))
-				continue
-			}
-			updateStatus = false
-			fallthrough
-		case model.OrderPaid:
-			if err := s.dao.UpdateOrderPaidStatus(context.Background(), order.ID, xlsOrder.TkPaidTime, xlsOrder.AlipayTotalPrice, xlsOrder.IncomeRate, xlsOrder.PubSharePreFee, xlsOrder.ItemNum, updateStatus); err != nil {
-				s.logger.Error("XlsOrdersToOrders", zap.Error(err))
-				continue
-			}
-		case model.OrderFailed:
-			if err := s.dao.UpdateOrderFailedStatus(context.Background(), order.ID, order.TradeParentID); err != nil {
-				s.logger.Error("XlsOrdersToOrders", zap.Error(err))
-				continue
-			}
-		}
+		s.dao.UpdateStatus(context.Background(), order, xlsOrder)
 	}
 	return
 }

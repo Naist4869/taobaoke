@@ -70,7 +70,7 @@ func (o *orders) unmatchedString() (int, string) {
 	}
 	strs := make([]string, 0, len(unmatch))
 	for _, order := range unmatch {
-		strs = append(strs, fmt.Sprintf("%s-%d-%d-%s-%s-%s-%s", order.ID, order.ItemID, order.AdzoneID, order.Title, order.UpdateTime.String(), order.TrendInfo.TKL, order.Status.String()))
+		strs = append(strs, fmt.Sprintf("%s-%d-%d-%s-%s-%s", order.ID, order.ItemID, order.AdzoneID, order.Title, order.TrendInfo.TKL, order.Status.String()))
 	}
 	return len(unmatch), strings.Join(strs, ",")
 }
@@ -143,7 +143,7 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 }
 
 func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetailsGetResult) (err error) {
-	if err = localOrder.MakeMatched(remoteOrder.ClickTime, remoteOrder.TkCreateTime, remoteOrder.TkStatus, remoteOrder.TradeID, remoteOrder.TradeParentID, remoteOrder.ItemNum, remoteOrder.PubSharePreFee); err != nil {
+	if err = localOrder.MakeMatched(remoteOrder.ClickTime, remoteOrder.TkCreateTime, remoteOrder.TradeID, remoteOrder.TradeParentID, remoteOrder.PubSharePreFee, remoteOrder.ItemPrice, model.OrderStatus(remoteOrder.TkStatus) == model.OrderFailed); err != nil {
 		o.logger.Error("makeMatched", zap.Error(err), zap.Any("RemoteOrder", remoteOrder), zap.Any("LocalOrder", localOrder))
 		return err
 	}

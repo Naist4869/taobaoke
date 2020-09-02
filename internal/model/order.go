@@ -17,7 +17,6 @@ const (
 	StatusField           = "status"
 	DeletedField          = "deleted"
 	TradeParentIDField    = "trade_parent_id"
-	UpdateTimeField       = "update_time"
 	AlipayTotalPriceField = "alipay_total_price"
 	PaidTimeField         = "paid_time"
 	CreateTimeField       = "create_time"
@@ -27,11 +26,15 @@ const (
 	EarningTimeField      = "earning_time"
 	WithDrawStatusField   = "withdraw_status"
 	PayPriceField         = "pay_price"
+	CountField            = "count"
+	TimelinesField        = "timelines"
 )
 
 type OrderStatus int
 
 const (
+	OrderIllegal OrderStatus = -1
+	OrderCreate  OrderStatus = 0
 	OrderBalance OrderStatus = 3
 	OrderPaid    OrderStatus = 12
 	OrderFailed  OrderStatus = 13
@@ -39,10 +42,12 @@ const (
 )
 
 var OrderStatusMap = map[OrderStatus]string{
+	OrderIllegal: "非法状态",
+	OrderCreate:  "已创建",
 	OrderBalance: "已结算",
 	OrderPaid:    "已付款",
 	OrderFailed:  "已失效",
-	OrderFinish:  "订单成功",
+	OrderFinish:  "已成功",
 }
 
 type ShopType int
@@ -76,19 +81,16 @@ func (s OrderStatus) Failed() bool {
 }
 
 type Order struct {
-	ID               string      `bson:"_id" json:"id"`                                // 对外显示的订单编号
+	ID               string      `bson:"_id" json:"id"`                                // 订单ID
 	UserID           string      `bson:"user_id" json:"user_id"`                       // 用户ID
 	ClickTime        tools.Time  `bson:"click_time" json:"click_time"`                 // 通过推广链接达到商品、店铺详情页的点击时间
 	CreateTime       tools.Time  `bson:"create_time" json:"create_time"`               // 创建订单时间 (以远程订单为准)
 	PaidTime         tools.Time  `bson:"paid_time" json:"paid_time"`                   // 付款时间
 	EarningTime      tools.Time  `bson:"earning_time" json:"earning_time"`             // 订单确认收货后且商家完成佣金支付的时间
-	UpdateTime       tools.Time  `bson:"update_time" json:"update_time"`               // 状态更新时间
 	Title            string      `bson:"title" json:"title"`                           // 商品标题
 	PicURL           string      `bson:"pic_url" json:"pic_url"`                       // 主图地址
 	Count            int         `bson:"count" json:"count"`                           // 商品数量
 	Price            int64       `bson:"price" json:"price"`                           // 商品单价  X100
-	OriginalPrice    int64       `bson:"original_price" json:"original_price"`         // 商品原价 X100
-	Coupon           int64       `bson:"coupon" json:"coupon"`                         // 优惠券金额 X100
 	Commission       int64       `bson:"commission" json:"commission"`                 // 实际得到的佣金 X100
 	Rebate           int64       `bson:"rebate" json:"rebate"`                         // 预估得到的佣金 X100
 	Salary           int64       `bson:"salary" json:"salary"`                         // 真正返给用户的金额
@@ -96,6 +98,7 @@ type Order struct {
 	WithDrawStatus   bool        `bson:"withdraw_status" json:"withdraw_status"`       // 是否已经提现
 	ItemID           int64       `bson:"item_id" json:"item_id"`                       // 590141576510	商品id
 	Status           OrderStatus `bson:"status" json:"status"`                         //已付款：指订单已付款，但还未确认收货 已收货：指订单已确认收货，但商家佣金未支付 已结算：指订单已确认收货，且商家佣金已支付成功 已失效：指订单关闭/订单佣金小于0.01元，订单关闭主要有：1）买家超时未付款； 2）买家付款前，买家/卖家取消了订单；3）订单付款后发起售中退款成功；3：订单结算，12：订单付款， 13：订单失效，14：订单成功
+	Timelines        []Timeline  `bson:"timelines" json:"timelines"`                   // 订单时间线
 	AdzoneID         int64       `bson:"adzone_id" json:"adzone_id"`                   // 11	推广位管理下的推广位名称对应的ID，同时也是pid=mm_1_2_3中的“3”这段数字
 	AlipayTotalPrice int64       `bson:"alipay_total_price" json:"alipay_total_price"` // X100 22.50存储2250	买家拍下付款的金额（不包含运费金额）
 	PayPrice         int64       `bson:"pay_price" json:"pay_price"`                   // X100  9.11存储911	买家确认收货的付款金额（不包含运费金额）
@@ -108,18 +111,43 @@ type Order struct {
 	Meta             DbMeta      `bson:"meta" json:"meta"`                             // 版本
 }
 
-func (o *Order) MakeMatched(clickTime tools.Time, createTime tools.Time, status int, tradeID string, tradeParentID string, count int, pubSharePreFee string) error {
+// Timeline 订单操作时间线数据
+type Timeline struct {
+	UserID int64      `bson:"userID"`
+	Time   tools.Time `bson:"time"`
+	Action string     `bson:"action"`
+}
+
+func NewTimeLine(userID int64, action string) Timeline {
+	return Timeline{
+		Time:   tools.Now(),
+		Action: action,
+		UserID: userID,
+	}
+}
+
+func (o *Order) MakeMatched(clickTime tools.Time, createTime tools.Time, tradeID string, tradeParentID string, pubSharePreFee string, ItemPrice string, isFail bool) error {
 	rebate, err := strconv.ParseFloat(pubSharePreFee, 64)
+	if err != nil {
+		return err
+	}
+	itemPrice, err := strconv.ParseFloat(ItemPrice, 64)
 	if err != nil {
 		return err
 	}
 	o.Rebate = int64(rebate * 100)
 	o.ClickTime = clickTime
 	o.CreateTime = createTime
-	o.Status = OrderStatus(status)
+	if isFail {
+		o.Status = OrderFailed
+		o.Timelines = []Timeline{NewTimeLine(-1, OrderFailed.String())}
+	} else {
+		o.Status = OrderCreate
+		o.Timelines = []Timeline{NewTimeLine(-1, OrderCreate.String())}
+	}
 	o.TradeID = tradeID
 	o.TradeParentID = tradeParentID
-	o.Count = count
+	o.Price = int64(itemPrice * 100)
 	return nil
 }
 
@@ -158,22 +186,23 @@ func (o *Order) MakePaid(paidTime tools.Time, status int, AlipayTotalPrice strin
 	// 保留两位小数四舍五入
 	roundCommission := math.Round(calculateCommission*100) / 100
 	if int64(roundCommission)*100 != o.Rebate {
-		return NewCalculateCommissionInconsistentError(float64(o.Rebate/100), roundCommission, calculateCommission)
+		return NewCalculateCommissionInconsistentError(o.ID, float64(o.Rebate/100), roundCommission, calculateCommission)
 	}
 	return nil
 }
 
 type CalculateCommissionInconsistent struct {
+	id                  string
 	pubSharePreFee      float64
 	roundCommission     float64
 	calculateCommission float64
 }
 
-func NewCalculateCommissionInconsistentError(pubSharePreFee float64, roundCommission float64, calculateCommission float64) *CalculateCommissionInconsistent {
-	return &CalculateCommissionInconsistent{pubSharePreFee: pubSharePreFee, roundCommission: roundCommission, calculateCommission: calculateCommission}
+func NewCalculateCommissionInconsistentError(id string, pubSharePreFee float64, roundCommission float64, calculateCommission float64) *CalculateCommissionInconsistent {
+	return &CalculateCommissionInconsistent{id: id, pubSharePreFee: pubSharePreFee, roundCommission: roundCommission, calculateCommission: calculateCommission}
 }
 func (e CalculateCommissionInconsistent) Error() string {
-	return fmt.Sprintf("计算得出的佣金和预估佣金不同, 预估佣金: %f, 计算佣金: %f, 为保留2位小数的计算佣金: %f", e.pubSharePreFee, e.roundCommission, e.calculateCommission)
+	return fmt.Sprintf("计算得出的佣金和预估佣金不同, 订单ID:%s ,预估佣金: %f, 计算佣金: %f, 为保留2位小数的计算佣金: %f", e.id, e.pubSharePreFee, e.roundCommission, e.calculateCommission)
 }
 func (e CalculateCommissionInconsistent) Is(target error) bool {
 	switch target.(type) {
@@ -201,6 +230,6 @@ type DbMeta struct {
 	Version int `bson:"version"` // 版本
 }
 
-func NewOrder(id string, userID string, adzoneID int64, title string, itemID int64, picURL string, shopName string, shopType int, price int64, reservePrice int64, coupon int64) *Order {
-	return &Order{ID: id, UserID: userID, AdzoneID: adzoneID, Title: title, ItemID: itemID, PicURL: picURL, ShopName: shopName, ShopType: shopType, Price: price, Coupon: coupon, OriginalPrice: reservePrice}
+func NewOrder(id string, userID string, adzoneID int64, title string, itemID int64, picURL string, shopName string, shopType int) *Order {
+	return &Order{ID: id, UserID: userID, AdzoneID: adzoneID, Title: title, ItemID: itemID, PicURL: picURL, ShopName: shopName, ShopType: shopType}
 }

@@ -33,11 +33,12 @@ type OrderDataService interface {
 	UpdateSingleOrderGeneric(ctx context.Context, id string, additionalFilter, operation bson.M) (err error)
 }
 type OrderMonitor interface {
+	UpdateStatus(ctx context.Context, localOrder *model.Order, fill model.Fill)
 	FindOrderByID(ctx context.Context, id string) (order *model.Order, err error)
 	UpdateOrderFailedStatus(ctx context.Context, id string, tradeParentID string) (err error)
-	UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int, updateStatus bool) (err error)
+	UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error)
 	UpdateManyWithDrawStatus(ctx context.Context, ids []string) (err error)
-	FindOneAndUpdateOrderBalanceStatus(ctx context.Context, id string, tradeParentID string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (order *model.Order, err error)
+	UpdateOrderBalanceStatus(ctx context.Context, id string, tradeParentID string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (err error)
 }
 
 type CacheObjService interface {
@@ -189,15 +190,15 @@ func (oc *OrderClient) FindOrderByTradeParentID(ctx context.Context, tradeParent
 	return
 }
 
-func (oc *OrderClient) findOneAndUpdateOrderBalanceStatus(ctx context.Context, id string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (order *model.Order, err error) {
+func (oc *OrderClient) updateOrderBalanceStatus(ctx context.Context, id string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (err error) {
 	commission, err := strconv.ParseFloat(totalCommissionFee, 64)
 	if err != nil {
-		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err))
+		oc.Logger.Error("updateOrderBalanceStatus", zap.Error(err))
 		return
 	}
 	payPrice, err := strconv.ParseFloat(PayPrice, 64)
 	if err != nil {
-		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err))
+		oc.Logger.Error("updateOrderBalanceStatus", zap.Error(err))
 		return
 	}
 	filter := bson.M{
@@ -207,29 +208,21 @@ func (oc *OrderClient) findOneAndUpdateOrderBalanceStatus(ctx context.Context, i
 	operation := bson.M{
 		SET: bson.M{
 			model.StatusField:      model.OrderBalance,
-			model.UpdateTimeField:  tools.Now(),
 			model.CommissionField:  int64(commission * 100),
 			model.SalaryScaleField: salaryScale,
 			model.SalaryField:      int64(commission*100) * salaryScale / 100,
 			model.EarningTimeField: earningTime,
 			model.PayPriceField:    int64(payPrice * 100),
 		},
+		ADDTOSET: bson.M{model.TimelinesField: model.NewTimeLine(-1, model.OrderBalance.String())},
 	}
-	option := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	updateResult := oc.collections[model.DBOrderKey].FindOneAndUpdate(ctx, filter, operation, option)
-	err = updateResult.Err()
-	if err != nil && err != mongo.ErrNoDocuments {
-		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err), ZapBsonM("filter", filter))
+	updateResult, err := oc.collections[model.DBOrderKey].UpdateOne(ctx, filter, operation)
+	if err != nil {
+		oc.Logger.Error("updateOrderBalanceStatus", zap.Error(err), ZapBsonM("filter", filter))
 		return
 	}
-	v := &model.Order{}
-	err = updateResult.Decode(v)
-	if err != nil && err != mongo.ErrNoDocuments {
-		oc.Logger.Error("findOneAndUpdateOrderBalanceStatus", zap.Error(err), ZapBsonM("filter", filter))
-		return
-	}
-	oc.Logger.Info("findOneAndUpdateOrderBalanceStatus", zap.String("id", id), zap.Int64("匹配数量", 1), zap.Int64("更新数量", 1))
-	return v, nil
+	oc.Logger.Info("updateOrderBalanceStatus", zap.String("id", id), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
+	return
 }
 
 func (oc *OrderClient) updateManyWithDrawStatus(ctx context.Context, ids []string) (err error) {
@@ -243,8 +236,8 @@ func (oc *OrderClient) updateManyWithDrawStatus(ctx context.Context, ids []strin
 	operation := bson.M{
 		SET: bson.M{
 			model.WithDrawStatusField: true,
-			model.UpdateTimeField:     tools.Now(),
 		},
+		ADDTOSET: bson.M{model.TimelinesField: model.NewTimeLine(-1, "已提现")},
 	}
 
 	updateResult, err := oc.collections[model.DBOrderKey].UpdateMany(ctx, filter, operation)
@@ -263,9 +256,9 @@ func (oc *OrderClient) updateOrderFailedStatus(ctx context.Context, id string) (
 	}
 	operation := bson.M{
 		SET: bson.M{
-			model.StatusField:     model.OrderFailed,
-			model.UpdateTimeField: tools.Now(),
+			model.StatusField: model.OrderFailed,
 		},
+		ADDTOSET: bson.M{model.TimelinesField: model.NewTimeLine(-1, model.OrderFailed.String())},
 	}
 	updateResult, err := oc.collections[model.DBOrderKey].UpdateOne(ctx, filter, operation)
 	if err != nil {
@@ -276,7 +269,7 @@ func (oc *OrderClient) updateOrderFailedStatus(ctx context.Context, id string) (
 	return
 }
 
-func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int, updateStatus bool) (err error) {
+func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error) {
 
 	alipayTotalPrice, err := strconv.ParseFloat(AlipayTotalPrice, 64)
 	if err != nil {
@@ -293,11 +286,11 @@ func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, pai
 		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
 		return err
 	}
-	calculateCommission := alipayTotalPrice * float64(ItemNum) * incomeRate / 100
+	calculateCommission := alipayTotalPrice * incomeRate / 100
 	// 保留两位小数四舍五入
 	roundCommission := math.Round(calculateCommission*100) / 100
 	if roundCommission != rebate {
-		err = model.NewCalculateCommissionInconsistentError(rebate, roundCommission, calculateCommission)
+		err = model.NewCalculateCommissionInconsistentError(id, rebate, roundCommission, calculateCommission)
 		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err))
 		err = nil
 	}
@@ -305,21 +298,15 @@ func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, pai
 		model.IDField:      id,
 		model.DeletedField: false,
 	}
-	operation := bson.M{}
-	if updateStatus {
-		operation[SET] = bson.M{
+	operation := bson.M{
+		SET: bson.M{
 			model.AlipayTotalPriceField: int64(alipayTotalPrice * 100),
 			model.PaidTimeField:         paidTime,
-			model.UpdateTimeField:       tools.Now(),
 			model.StatusField:           model.OrderPaid,
-		}
-	} else {
-		operation[SET] = bson.M{
-			model.AlipayTotalPriceField: int64(alipayTotalPrice * 100),
-			model.PaidTimeField:         paidTime,
-		}
+			model.CountField:            ItemNum,
+		},
+		ADDTOSET: bson.M{model.TimelinesField: model.NewTimeLine(-1, model.OrderPaid.String())},
 	}
-
 	updateResult, err := oc.collections[model.DBOrderKey].UpdateOne(ctx, filter, operation)
 	if err != nil {
 		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err), ZapBsonM("filter", filter))

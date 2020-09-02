@@ -3,7 +3,9 @@ package dao
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
+	"reflect"
 	"taobaoke/internal/model"
 	"taobaoke/tools"
 	"testing"
@@ -156,4 +158,47 @@ func TestDao_Insert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+func Test_OrderMap(t *testing.T) {
+	var statues = []model.OrderStatus{model.OrderCreate, model.OrderPaid, model.OrderFinish, model.OrderBalance}
+	var fun HandlerFunc
+	var statusesMap = tools.NewOrderedMap(tools.NewKeys(func(i interface{}, j interface{}) int8 {
+		if i.(model.OrderStatus) == j.(model.OrderStatus) {
+			return 0
+		}
+		var Ifinded, Jfinded int8
+		for _, status := range statues {
+			// 先找到的肯定比后找到的小
+			switch status {
+			case i.(model.OrderStatus):
+				Ifinded += 1
+			case j.(model.OrderStatus):
+				Jfinded += 1
+			default:
+				continue
+			}
+			return Jfinded - Ifinded
+		}
+		return 0
+	}, reflect.TypeOf(model.OrderCreate)), reflect.TypeOf(fun))
+	statusesMap.Put(model.OrderFinish, HandlerFunc(func(c *Context) {
+		fmt.Println("1")
+	}))
+	statusesMap.Put(model.OrderPaid, HandlerFunc(func(c *Context) {
+		fmt.Println("2")
+	}))
+	statusesMap.Put(model.OrderBalance, HandlerFunc(func(c *Context) {
+		fmt.Println("4")
+	}))
+	statusesMap.Put(model.OrderCreate, HandlerFunc(func(c *Context) {
+		fmt.Println("1")
+	}))
+	t.Logf("%s", statusesMap)
+}
+func Test_UpdateStatus(t *testing.T) {
+	d.UpdateStatus(ctx, &model.Order{
+		Status: model.OrderIllegal,
+	}, &model.XLSOrder{
+		TkStatus: "13",
+	})
 }

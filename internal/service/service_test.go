@@ -128,7 +128,7 @@ func TestOpenXLS(t *testing.T) {
 	OpenXLS("OrderDetail-2020-06-13.xls")
 }
 func TestService_XlsOrdersToOrders(t *testing.T) {
-	xlsOrders := OpenXLS("OrderDetail-2020-08-29 (1).xls")
+	xlsOrders := OpenXLS("OrderDetail-2020-09-03.xls")
 	testService.XlsOrdersToOrders(xlsOrders)
 }
 func TestService_HighCommission(t *testing.T) {

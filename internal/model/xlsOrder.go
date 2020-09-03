@@ -93,6 +93,7 @@ func (x *XLSOrder) FillContext() *UpdateArgument {
 		ItemNum:            x.ItemNum,
 		TotalCommissionFee: x.TotalCommissionFee,
 		PayPrice:           x.PayPrice,
+		TradeParentID:      x.TradeParentID,
 	}
 }
 

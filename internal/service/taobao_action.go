@@ -330,6 +330,7 @@ func (t *TbkOrderDetailsGetResult) FillContext() *model.UpdateArgument {
 		ItemNum:            t.ItemNum,
 		TotalCommissionFee: t.TotalCommissionFee,
 		PayPrice:           t.PayPrice,
+		TradeParentID:      t.TradeParentID,
 	}
 }
 

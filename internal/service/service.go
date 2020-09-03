@@ -72,7 +72,7 @@ func New(d dao.Dao, l *log.Logger, client *bm.Client, orders *orders) (s *Servic
 	err = paladin.Watch("application.toml", s.ac)
 	// 查询DB中所有未完成的单添加到匹配队列
 	now := tools.Now()
-	if unfinishOrders, err := s.dao.QueryOrderByStatus(context.Background(), now.Add(-time.Hour*24*45), now, model.OrderPaid, model.OrderFinish); err != nil {
+	if unfinishOrders, err := s.dao.QueryOrderByStatus(context.Background(), now.Add(-time.Hour*24*45), now, model.OrderCreate, model.OrderPaid, model.OrderFinish); err != nil {
 		s.logger.Error("Service初始化", zap.Error(err))
 	} else {
 		for _, order := range unfinishOrders {

@@ -12,6 +12,8 @@ import (
 	"taobaoke/tools"
 	"testing"
 
+	"go.uber.org/zap"
+
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/stretchr/testify/require"
@@ -285,5 +287,33 @@ func TestOrders_String(t *testing.T) {
 func TestService_WithDraw2(t *testing.T) {
 	testService.WithDraw(ctx, &pb.WithDrawReq{
 		UserID: "oqeBd0fGbtYTmoVGhHzZ5Nf3-Egc",
+	})
+}
+func TestService_MonitorMarch(t *testing.T) {
+	orders, err := testService.dao.MatchGetAll(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	remoteOrders, err := testService.QueryRemoteOrderByTradeParentID(ctx, orders)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ordersMap := make(map[string]*model.Order, len(orders))
+	for _, order := range orders {
+		if _, ok := remoteOrders.Load(order.ID); ok {
+			ordersMap[order.ID] = order
+		}
+	}
+	remoteOrders.Range(func(key, value interface{}) bool {
+		id := key.(string)
+		remoteOrder := value.(TbkOrderDetailsGetResult)
+		localOrder := ordersMap[id]
+		status := model.OrderStatus(remoteOrder.TkStatus)
+		testService.logger.Info("MonitorMarch", zap.String("动作", "开始检测远程订单状态"), zap.Any("localOrder", localOrder), zap.Any("remoteOrder", remoteOrder))
+		if localOrder.Status != status {
+			testService.logger.Info("MonitorMarch", zap.String("动作", "检测到远程订单状态变更"), zap.Any("本地订单", localOrder), zap.Any("远程订单", remoteOrder))
+			testService.dao.UpdateStatus(ctx, localOrder, &remoteOrder, testService.GetSalaryScale())
+		}
+		return true
 	})
 }

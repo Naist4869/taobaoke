@@ -130,7 +130,7 @@ func (d *dao) UpdateOrderBalanceStatus(ctx context.Context, id string, tradePare
 		balance += order.Salary
 	}
 
-	if _, err = d.client.BalanceTemplateMsgSend(ctx, &pb.BalanceTemplateMsgSendReq{
+	if _, err = d.BalanceTemplateMsgSend(ctx, &pb.BalanceTemplateMsgSendReq{
 		UserID:      afterOrder.UserID,
 		OrderID:     afterOrder.TradeParentID,
 		Title:       afterOrder.Title,
@@ -317,6 +317,9 @@ func (d *dao) UpdateStatus(ctx context.Context, localOrder *model.Order, fill mo
 	c.reset()
 	c.updateArg = fill.FillContext()
 	c.localOrder = localOrder
+	if c.updateArg.TradeParentID != c.localOrder.TradeParentID {
+		return
+	}
 	c.ctx = ctx
 	c.SalaryScale = salaryScale
 	subMap := d.statusesMap.SubMap(localOrder.Status, c.updateArg.Status)

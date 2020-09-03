@@ -217,6 +217,9 @@ func (oc *OrderClient) updateOrderFinishStatus(ctx context.Context, id string, P
 		oc.Logger.Error("updateOrderFinishStatus", zap.Error(err), ZapBsonM("filter", filter))
 		return
 	}
+	if updateResult.ModifiedCount == 0 {
+		return NewErrIDNotFound([]string{id})
+	}
 	oc.Logger.Info("updateOrderFinishStatus", zap.String("id", id), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
 	return
 }
@@ -299,6 +302,9 @@ func (oc *OrderClient) updateOrderFailedStatus(ctx context.Context, id string) (
 		oc.Logger.Error("UpdateOrderFailedStatus", zap.Error(err), ZapBsonM("filter", filter))
 		return
 	}
+	if updateResult.ModifiedCount == 0 {
+		return NewErrIDNotFound([]string{id})
+	}
 	oc.Logger.Info("UpdateOrderFailedStatus", zap.String("id", id), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
 	return
 }
@@ -345,6 +351,9 @@ func (oc *OrderClient) updateOrderPaidStatus(ctx context.Context, id string, pai
 	if err != nil {
 		oc.Logger.Error("UpdateOrderPaidStatus", zap.Error(err), ZapBsonM("filter", filter))
 		return
+	}
+	if updateResult.ModifiedCount == 0 {
+		return NewErrIDNotFound([]string{id})
 	}
 	oc.Logger.Info("UpdateOrderPaidStatus", zap.String("id", id), zap.Int64("匹配数量", updateResult.MatchedCount), zap.Int64("更新数量", updateResult.ModifiedCount))
 	return

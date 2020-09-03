@@ -21,7 +21,8 @@ service TBK {
   rpc WithDraw(WithDrawReq)returns(WithDrawResp);
 }
 service Wechat{
-  rpc TemplateMsgSend(TemplateMsgSendReq) returns(.google.protobuf.Empty);
+  rpc MatchedTemplateMsgSend(MatchedTemplateMsgSendReq) returns(.google.protobuf.Empty);
+  rpc BalanceTemplateMsgSend(BalanceTemplateMsgSendReq) returns(.google.protobuf.Empty);
 }
 message HelloReq {
   string name = 1 [(gogoproto.moretags) = 'form:"name" validate:"required"'];
@@ -47,13 +48,23 @@ message KeyConvertResp{
   string PicURL=6;
 
 }
-message TemplateMsgSendReq{
+
+message MatchedTemplateMsgSendReq{
   string userID = 1;
   string orderID =2;
   string title =3;
   string paidTime =4;
   string alipayTotalPrice=5;
   string rebate = 6;
+}
+
+message BalanceTemplateMsgSendReq{
+  string userID = 1;
+  string orderID =2;
+  string title =3;
+  string earningTime =4;
+  string salary=5;
+  string balance = 6;
 }
 
 message WithDrawReq{

@@ -29,7 +29,8 @@ var PathTBKPing = "/demo.service.v1.TBK/Ping"
 var PathTBKKeyConvert = "/demo.service.v1.TBK/KeyConvert"
 var PathTBKWithDraw = "/demo.service.v1.TBK/WithDraw"
 
-var PathWechatTemplateMsgSend = "/demo.service.v1.Wechat/TemplateMsgSend"
+var PathWechatMatchedTemplateMsgSend = "/demo.service.v1.Wechat/MatchedTemplateMsgSend"
+var PathWechatBalanceTemplateMsgSend = "/demo.service.v1.Wechat/BalanceTemplateMsgSend"
 
 // TBKBMServer is the server API for TBK service.
 type TBKBMServer interface {
@@ -79,22 +80,34 @@ func RegisterTBKBMServer(e *bm.Engine, server TBKBMServer) {
 
 // WechatBMServer is the server API for Wechat service.
 type WechatBMServer interface {
-	TemplateMsgSend(ctx context.Context, req *TemplateMsgSendReq) (resp *google_protobuf1.Empty, err error)
+	MatchedTemplateMsgSend(ctx context.Context, req *MatchedTemplateMsgSendReq) (resp *google_protobuf1.Empty, err error)
+
+	BalanceTemplateMsgSend(ctx context.Context, req *BalanceTemplateMsgSendReq) (resp *google_protobuf1.Empty, err error)
 }
 
 var WechatSvc WechatBMServer
 
-func wechatTemplateMsgSend(c *bm.Context) {
-	p := new(TemplateMsgSendReq)
+func wechatMatchedTemplateMsgSend(c *bm.Context) {
+	p := new(MatchedTemplateMsgSendReq)
 	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
 		return
 	}
-	resp, err := WechatSvc.TemplateMsgSend(c, p)
+	resp, err := WechatSvc.MatchedTemplateMsgSend(c, p)
+	c.JSON(resp, err)
+}
+
+func wechatBalanceTemplateMsgSend(c *bm.Context) {
+	p := new(BalanceTemplateMsgSendReq)
+	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
+		return
+	}
+	resp, err := WechatSvc.BalanceTemplateMsgSend(c, p)
 	c.JSON(resp, err)
 }
 
 // RegisterWechatBMServer Register the blademaster route
 func RegisterWechatBMServer(e *bm.Engine, server WechatBMServer) {
 	WechatSvc = server
-	e.GET("/demo.service.v1.Wechat/TemplateMsgSend", wechatTemplateMsgSend)
+	e.GET("/demo.service.v1.Wechat/MatchedTemplateMsgSend", wechatMatchedTemplateMsgSend)
+	e.GET("/demo.service.v1.Wechat/BalanceTemplateMsgSend", wechatBalanceTemplateMsgSend)
 }

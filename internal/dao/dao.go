@@ -3,9 +3,15 @@ package dao
 import (
 	"context"
 	"reflect"
+	"strconv"
 	"sync"
+	pb "taobaoke/api"
 	"taobaoke/tools"
 	"time"
+
+	"github.com/go-kratos/kratos/pkg/net/rpc/warden"
+	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc"
 
 	"go.uber.org/zap"
 
@@ -48,11 +54,36 @@ type dao struct {
 	mongo        *mongo.Client
 	orderClient  *OrderClient
 	cache        *fanout.Fanout
+	client       pb.WechatClient
+	once         sync.Once
+	onceFun      func()
 	logger       *log.Logger
 	pool         sync.Pool
 	statusesMap  tools.OrderedMap
 	demoExpire   int32
 	orderCacheCh chan map[string]interface{} // key -> tradeParentID:order
+}
+
+func (d *dao) MatchedTemplateMsgSend(ctx context.Context, in *pb.MatchedTemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+	d.once.Do(d.onceFun)
+	defer func() {
+		err := recover()
+		if err != nil {
+			d.logger.Panic("MatchedTemplateMsgSend", zap.Error(err.(error)))
+		}
+	}()
+	return d.client.MatchedTemplateMsgSend(ctx, in, opts...)
+}
+
+func (d *dao) BalanceTemplateMsgSend(ctx context.Context, in *pb.BalanceTemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+	d.once.Do(d.onceFun)
+	defer func() {
+		err := recover()
+		if err != nil {
+			d.logger.Panic("BalanceTemplateMsgSend", zap.Error(err.(error)))
+		}
+	}()
+	return d.client.BalanceTemplateMsgSend(ctx, in, opts...)
 }
 
 func (d *dao) UpdateOrderFailedStatus(ctx context.Context, id string, tradeParentID string) (err error) {
@@ -74,14 +105,40 @@ func (d *dao) UpdateOrderPaidStatus(ctx context.Context, id string, paidTime too
 func (d *dao) UpdateManyWithDrawStatus(ctx context.Context, ids []string) (err error) {
 	return d.orderClient.updateManyWithDrawStatus(ctx, ids)
 }
+func (d *dao) UpdateOrderFinishStatus(ctx context.Context, id string, payPrice string) (err error) {
+	return d.orderClient.updateOrderFinishStatus(ctx, id, payPrice)
 
-func (d *dao) UpdateOrderBalanceStatus(ctx context.Context, id string, tradeParentID string, earningTime tools.Time, totalCommissionFee string, PayPrice string, salaryScale int64) (err error) {
-	err = d.orderClient.updateOrderBalanceStatus(ctx, id, earningTime, totalCommissionFee, PayPrice, salaryScale)
+}
+func (d *dao) UpdateOrderBalanceStatus(ctx context.Context, id string, tradeParentID string, earningTime tools.Time, totalCommissionFee string, salaryScale int64) (err error) {
+	afterOrder, err := d.orderClient.findOneAndUpdateOrderBalanceStatus(ctx, id, earningTime, totalCommissionFee, salaryScale)
 	if err != nil {
 		return
 	}
 	if _, err = d.DelFromMatchCache(ctx, []string{tradeParentID}); err != nil {
-		d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("tradeParentID", id))
+		d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("tradeParentID", tradeParentID))
+		err = nil
+	}
+	//todo 暂时先这样 没做用户钱包
+	notWithDraw, err := d.QueryNotWithDrawOrderByUserID(ctx, afterOrder.UserID)
+	if err != nil {
+		d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("ID", id))
+		return
+	}
+
+	var balance int64
+	for _, order := range notWithDraw {
+		balance += order.Salary
+	}
+
+	if _, err = d.client.BalanceTemplateMsgSend(ctx, &pb.BalanceTemplateMsgSendReq{
+		UserID:      afterOrder.UserID,
+		OrderID:     afterOrder.TradeParentID,
+		Title:       afterOrder.Title,
+		EarningTime: afterOrder.EarningTime.String(),
+		Salary:      strconv.FormatFloat(float64(afterOrder.Salary)/100, 'f', -1, 64),
+		Balance:     strconv.FormatFloat(float64(balance)/100, 'f', -1, 64),
+	}); err != nil {
+		d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("ID", id))
 		err = nil
 	}
 	return
@@ -131,6 +188,19 @@ func newDao(logger *log.Logger, r *redis.Client, mc *memcache.Memcache, db *sql.
 		orderCacheCh: make(chan map[string]interface{}, 10240),
 	}
 	cf = d.Close
+	d.onceFun = func() {
+		//  现在是相互依赖的 只能懒加载 不然服务都跑不起来 应该建个代理转发请求解耦
+		// 10秒重试一次 超过3分钟连不上就这样吧.. 因为在once里不会再有第二次赋值了  下面只要执行一次就会panic一次空指针
+		err := tools.Retry(func() (err error, mayRetry bool) {
+			d.client, err = pb.NewClient(&warden.ClientConfig{Timeout: xtime.Duration(time.Second)})
+			if err == context.DeadlineExceeded {
+				return nil, true
+			}
+			return
+		})
+		d.logger.Error("TemplateMsgSend once.Do", zap.Error(err))
+	}
+
 	d.pool.New = func() interface{} {
 		return d.allocateContext()
 	}
@@ -162,30 +232,41 @@ func newDao(logger *log.Logger, r *redis.Client, mc *memcache.Memcache, db *sql.
 		statusesMap.Put(model.OrderFailed, HandlerFunc(func(c *Context) {
 			err := c.engine.UpdateOrderFailedStatus(c.ctx, c.localOrder.ID, c.localOrder.TradeParentID)
 			if err != nil {
-
 				c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+				c.Abort()
 			}
+			c.logger.Info("Context", zap.String("原因", "发现已失效的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+
 			return
 		}))
 		statusesMap.Put(model.OrderPaid, HandlerFunc(func(c *Context) {
 			err := c.engine.UpdateOrderPaidStatus(c.ctx, c.localOrder.ID, c.updateArg.PaidTime, c.updateArg.AlipayTotalPrice, c.updateArg.IncomeRate, c.updateArg.PubSharePreFee, c.updateArg.ItemNum)
 			if err != nil {
 				c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
-
+				c.Abort()
 			}
+			c.logger.Info("Context", zap.String("原因", "发现已付款的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+			return
 		}))
 		statusesMap.Put(model.OrderFinish, HandlerFunc(func(c *Context) {
+			err := c.engine.UpdateOrderFinishStatus(c.ctx, c.localOrder.ID, c.updateArg.PayPrice)
 			// 暂时没看到finish的单
-			c.logger.Info("Context", zap.String("原因", "发现订单完成的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+			if err != nil {
+				c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+				c.Abort()
+			}
+			c.logger.Info("Context", zap.String("原因", "发现已完成的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
 			return
 		}))
 		statusesMap.Put(model.OrderBalance, HandlerFunc(func(c *Context) {
-			err := c.engine.UpdateOrderBalanceStatus(c.ctx, c.localOrder.ID, c.localOrder.TradeParentID, c.updateArg.EarningTime, c.updateArg.TotalCommissionFee, c.updateArg.PayPrice, c.localOrder.SalaryScale)
+			err := c.engine.UpdateOrderBalanceStatus(c.ctx, c.localOrder.ID, c.localOrder.TradeParentID, c.updateArg.EarningTime, c.updateArg.TotalCommissionFee, c.SalaryScale)
 			if err != nil {
 				c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
-
+				c.Abort()
 			}
+			c.logger.Info("Context", zap.String("原因", "发现已结算的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
 
+			return
 		}))
 		statusesMap.Put(model.OrderCreate, HandlerFunc(func(c *Context) {
 			c.logger.Error("Context", zap.String("原因", "进入了OrderCreate更新方法"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
@@ -231,12 +312,13 @@ func (d *dao) allocateContext() *Context {
 	}
 }
 
-func (d *dao) UpdateStatus(ctx context.Context, localOrder *model.Order, fill model.Fill) {
+func (d *dao) UpdateStatus(ctx context.Context, localOrder *model.Order, fill model.Fill, salaryScale int64) {
 	c := d.pool.Get().(*Context)
 	c.reset()
 	c.updateArg = fill.FillContext()
 	c.localOrder = localOrder
 	c.ctx = ctx
+	c.SalaryScale = salaryScale
 	subMap := d.statusesMap.SubMap(localOrder.Status, c.updateArg.Status)
 	// statusesMap不是并发安全的 但是只查不改没有问题
 	for _, fun := range subMap.Elems() {

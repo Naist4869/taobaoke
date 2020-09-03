@@ -229,7 +229,7 @@ func (s *Service) MonitorMarch() {
 			s.logger.Info("MonitorMarch", zap.String("动作", "开始检测远程订单状态"), zap.Any("localOrder", localOrder), zap.Any("remoteOrder", remoteOrder))
 			if localOrder.Status != status {
 				s.logger.Info("MonitorMarch", zap.String("动作", "检测到远程订单状态变更"), zap.Any("本地订单", localOrder), zap.Any("远程订单", remoteOrder))
-				s.dao.UpdateStatus(ctx, localOrder, &remoteOrder)
+				s.dao.UpdateStatus(ctx, localOrder, &remoteOrder, s.GetSalaryScale())
 			}
 			return true
 		})
@@ -258,10 +258,9 @@ func (s *Service) WithDraw(ctx context.Context, req *pb.WithDrawReq) (*pb.WithDr
 		id := key.(string)
 		remoteOrder := value.(TbkOrderDetailsGetResult)
 		localOrder := ordersMap[id]
-		localOrder.SalaryScale = s.GetSalaryScale()
 		if !localOrder.Status.Balance() {
 			if model.OrderStatus(remoteOrder.TkStatus).Balance() {
-				s.dao.UpdateStatus(ctx, localOrder, &remoteOrder)
+				s.dao.UpdateStatus(ctx, localOrder, &remoteOrder, s.GetSalaryScale())
 				afterOrder, err := s.dao.FindOrderByID(ctx, localOrder.ID)
 				if err != nil {
 					s.logger.Error("WithDraw", zap.Error(err), zap.Any("localOrder", localOrder), zap.Any("RemoteOrder", remoteOrder))
@@ -651,7 +650,7 @@ func (s *Service) XlsOrdersToOrders(xlsOrders []*model.XLSOrder) {
 		if err != nil {
 			continue
 		}
-		s.dao.UpdateStatus(context.Background(), order, xlsOrder)
+		s.dao.UpdateStatus(context.Background(), order, xlsOrder, s.GetSalaryScale())
 	}
 	return
 }

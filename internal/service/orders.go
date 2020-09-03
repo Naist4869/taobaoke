@@ -5,17 +5,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 	pb "taobaoke/api"
 	"taobaoke/internal/dao"
 	"taobaoke/internal/model"
-	"time"
-
-	"github.com/go-kratos/kratos/pkg/net/rpc/warden"
-	xtime "github.com/go-kratos/kratos/pkg/time"
-
-	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
 
 	"go.uber.org/zap"
 
@@ -33,19 +25,6 @@ func NewOrders(dao dao.OrderMatchService, logger *log.Logger) *orders {
 	o := &orders{
 		logger: logger.With(zap.String("模块名", "订单管理")),
 		dao:    dao,
-	}
-	var once sync.Once
-	o.doStart = func() {
-		once.Do(func() {
-			if o.client == nil {
-				var err error
-				o.client, err = pb.NewClient(&warden.ClientConfig{Timeout: xtime.Duration(time.Second)})
-				if err != nil {
-					// todo 也许应该重试
-					panic(err)
-				}
-			}
-		})
 	}
 	return o
 
@@ -156,7 +135,7 @@ func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetail
 		o.logger.Error("makeMatched", zap.Error(err))
 	}
 
-	_, _ = o.TemplateMsgSend(context.Background(), &pb.TemplateMsgSendReq{
+	_, _ = o.dao.MatchedTemplateMsgSend(context.Background(), &pb.MatchedTemplateMsgSendReq{
 		UserID:           localOrder.UserID,
 		OrderID:          localOrder.TradeParentID,
 		Title:            localOrder.Title,
@@ -166,11 +145,4 @@ func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetail
 	})
 	o.logger.Info("查单队列", zap.String("状态", o.String()))
 	return
-}
-
-func (o *orders) TemplateMsgSend(ctx context.Context, in *pb.TemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error) {
-	if o.doStart != nil {
-		o.doStart()
-	}
-	return o.client.TemplateMsgSend(ctx, in, opts...)
 }

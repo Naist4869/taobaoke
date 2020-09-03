@@ -12,7 +12,7 @@ func Retry(f func() (err error, mayRetry bool)) error {
 		bestErr     error
 		lowestErrno syscall.Errno
 		start       time.Time
-		nextSleep   = 1 * time.Second
+		nextSleep   = 10 * time.Second
 	)
 	for {
 		err, mayRetry := f()
@@ -30,8 +30,8 @@ func Retry(f func() (err error, mayRetry bool)) error {
 
 		if start.IsZero() {
 			start = time.Now()
-			// 超过1分钟还报错的话就返回错误
-		} else if d := time.Since(start) + nextSleep; d >= time.Minute {
+			// 超过3分钟还报错的话就返回错误
+		} else if d := time.Since(start) + nextSleep; d >= time.Minute*3 {
 			break
 		}
 		time.Sleep(nextSleep)

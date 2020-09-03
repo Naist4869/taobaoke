@@ -200,5 +200,5 @@ func Test_UpdateStatus(t *testing.T) {
 		Status: model.OrderIllegal,
 	}, &model.XLSOrder{
 		TkStatus: "13",
-	})
+	}, 90)
 }

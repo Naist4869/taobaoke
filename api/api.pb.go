@@ -198,7 +198,7 @@ func (m *KeyConvertResp) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_KeyConvertResp proto.InternalMessageInfo
 
-type TemplateMsgSendReq struct {
+type MatchedTemplateMsgSendReq struct {
 	UserID               string   `protobuf:"bytes,1,opt,name=userID,proto3" json:"userID,omitempty"`
 	OrderID              string   `protobuf:"bytes,2,opt,name=orderID,proto3" json:"orderID,omitempty"`
 	Title                string   `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
@@ -210,18 +210,18 @@ type TemplateMsgSendReq struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TemplateMsgSendReq) Reset()         { *m = TemplateMsgSendReq{} }
-func (m *TemplateMsgSendReq) String() string { return proto.CompactTextString(m) }
-func (*TemplateMsgSendReq) ProtoMessage()    {}
-func (*TemplateMsgSendReq) Descriptor() ([]byte, []int) {
+func (m *MatchedTemplateMsgSendReq) Reset()         { *m = MatchedTemplateMsgSendReq{} }
+func (m *MatchedTemplateMsgSendReq) String() string { return proto.CompactTextString(m) }
+func (*MatchedTemplateMsgSendReq) ProtoMessage()    {}
+func (*MatchedTemplateMsgSendReq) Descriptor() ([]byte, []int) {
 	return fileDescriptor_00212fb1f9d3bf1c, []int{4}
 }
-func (m *TemplateMsgSendReq) XXX_Unmarshal(b []byte) error {
+func (m *MatchedTemplateMsgSendReq) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TemplateMsgSendReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MatchedTemplateMsgSendReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_TemplateMsgSendReq.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MatchedTemplateMsgSendReq.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -231,17 +231,62 @@ func (m *TemplateMsgSendReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *TemplateMsgSendReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TemplateMsgSendReq.Merge(m, src)
+func (m *MatchedTemplateMsgSendReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MatchedTemplateMsgSendReq.Merge(m, src)
 }
-func (m *TemplateMsgSendReq) XXX_Size() int {
+func (m *MatchedTemplateMsgSendReq) XXX_Size() int {
 	return m.Size()
 }
-func (m *TemplateMsgSendReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_TemplateMsgSendReq.DiscardUnknown(m)
+func (m *MatchedTemplateMsgSendReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_MatchedTemplateMsgSendReq.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TemplateMsgSendReq proto.InternalMessageInfo
+var xxx_messageInfo_MatchedTemplateMsgSendReq proto.InternalMessageInfo
+
+type BalanceTemplateMsgSendReq struct {
+	UserID               string   `protobuf:"bytes,1,opt,name=userID,proto3" json:"userID,omitempty"`
+	OrderID              string   `protobuf:"bytes,2,opt,name=orderID,proto3" json:"orderID,omitempty"`
+	Title                string   `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	EarningTime          string   `protobuf:"bytes,4,opt,name=earningTime,proto3" json:"earningTime,omitempty"`
+	Salary               string   `protobuf:"bytes,5,opt,name=salary,proto3" json:"salary,omitempty"`
+	Balance              string   `protobuf:"bytes,6,opt,name=balance,proto3" json:"balance,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *BalanceTemplateMsgSendReq) Reset()         { *m = BalanceTemplateMsgSendReq{} }
+func (m *BalanceTemplateMsgSendReq) String() string { return proto.CompactTextString(m) }
+func (*BalanceTemplateMsgSendReq) ProtoMessage()    {}
+func (*BalanceTemplateMsgSendReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{5}
+}
+func (m *BalanceTemplateMsgSendReq) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BalanceTemplateMsgSendReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BalanceTemplateMsgSendReq.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BalanceTemplateMsgSendReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BalanceTemplateMsgSendReq.Merge(m, src)
+}
+func (m *BalanceTemplateMsgSendReq) XXX_Size() int {
+	return m.Size()
+}
+func (m *BalanceTemplateMsgSendReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_BalanceTemplateMsgSendReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BalanceTemplateMsgSendReq proto.InternalMessageInfo
 
 type WithDrawReq struct {
 	UserID               string   `protobuf:"bytes,1,opt,name=userID,proto3" json:"userID,omitempty"`
@@ -254,7 +299,7 @@ func (m *WithDrawReq) Reset()         { *m = WithDrawReq{} }
 func (m *WithDrawReq) String() string { return proto.CompactTextString(m) }
 func (*WithDrawReq) ProtoMessage()    {}
 func (*WithDrawReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{5}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{6}
 }
 func (m *WithDrawReq) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -295,7 +340,7 @@ func (m *WithDrawResp) Reset()         { *m = WithDrawResp{} }
 func (m *WithDrawResp) String() string { return proto.CompactTextString(m) }
 func (*WithDrawResp) ProtoMessage()    {}
 func (*WithDrawResp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{6}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{7}
 }
 func (m *WithDrawResp) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -329,7 +374,8 @@ func init() {
 	proto.RegisterType((*HelloResp)(nil), "demo.service.v1.HelloResp")
 	proto.RegisterType((*KeyConvertReq)(nil), "demo.service.v1.KeyConvertReq")
 	proto.RegisterType((*KeyConvertResp)(nil), "demo.service.v1.KeyConvertResp")
-	proto.RegisterType((*TemplateMsgSendReq)(nil), "demo.service.v1.TemplateMsgSendReq")
+	proto.RegisterType((*MatchedTemplateMsgSendReq)(nil), "demo.service.v1.MatchedTemplateMsgSendReq")
+	proto.RegisterType((*BalanceTemplateMsgSendReq)(nil), "demo.service.v1.BalanceTemplateMsgSendReq")
 	proto.RegisterType((*WithDrawReq)(nil), "demo.service.v1.WithDrawReq")
 	proto.RegisterType((*WithDrawResp)(nil), "demo.service.v1.WithDrawResp")
 }
@@ -337,44 +383,48 @@ func init() {
 func init() { proto.RegisterFile("api.proto", fileDescriptor_00212fb1f9d3bf1c) }
 
 var fileDescriptor_00212fb1f9d3bf1c = []byte{
-	// 579 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x93, 0xcf, 0x6e, 0xd3, 0x4e,
-	0x10, 0xc7, 0xeb, 0xa6, 0x4d, 0xd3, 0xe9, 0xef, 0x47, 0xd1, 0x0a, 0x55, 0xc6, 0x14, 0xa7, 0x72,
-	0x55, 0x09, 0x21, 0xe1, 0x8a, 0x22, 0x81, 0xd4, 0x1b, 0x49, 0xf9, 0x53, 0x95, 0x42, 0x64, 0x52,
-	0x15, 0x71, 0xdb, 0xd8, 0x53, 0x67, 0x25, 0xdb, 0xbb, 0x5d, 0x6f, 0x82, 0xf2, 0x26, 0x9c, 0x78,
-	0x12, 0x1e, 0xa0, 0x47, 0x2e, 0x5c, 0x2b, 0x08, 0x37, 0x8e, 0x3c, 0x01, 0x5a, 0xaf, 0x4d, 0xd2,
-	0x46, 0xcd, 0xcd, 0x9f, 0x99, 0xd9, 0xef, 0x7c, 0x67, 0x34, 0x86, 0x55, 0x2a, 0x98, 0x2f, 0x24,
-	0x57, 0x9c, 0xac, 0x47, 0x98, 0x72, 0x3f, 0x47, 0x39, 0x64, 0x21, 0xfa, 0xc3, 0xc7, 0xce, 0xa3,
-	0x98, 0xa9, 0xfe, 0xa0, 0xe7, 0x87, 0x3c, 0xdd, 0x8d, 0x79, 0xcc, 0x77, 0x8b, 0xba, 0xde, 0xe0,
-	0xac, 0xa0, 0x02, 0x8a, 0x2f, 0xf3, 0xde, 0xb9, 0x17, 0x73, 0x1e, 0x27, 0x38, 0xa9, 0xc2, 0x54,
-	0xa8, 0x51, 0x99, 0xdc, 0x2c, 0x93, 0x54, 0xb0, 0x5d, 0x9a, 0x65, 0x5c, 0x51, 0xc5, 0x78, 0x96,
-	0x9b, 0xac, 0xd7, 0x86, 0xc6, 0x6b, 0x4c, 0x12, 0x1e, 0xe0, 0x39, 0x79, 0x06, 0x4b, 0x19, 0x4d,
-	0xd1, 0xb6, 0xb6, 0xac, 0x07, 0xab, 0xad, 0xed, 0x3f, 0x97, 0xcd, 0xe6, 0x19, 0x97, 0xe9, 0xbe,
-	0xa7, 0xa3, 0xde, 0xd6, 0x90, 0x26, 0x2c, 0xa2, 0x0a, 0xf7, 0x3d, 0x89, 0xe7, 0x03, 0x26, 0x31,
-	0xf2, 0x82, 0xe2, 0x81, 0xb7, 0x07, 0xab, 0xa5, 0x48, 0x2e, 0xc8, 0x0e, 0xac, 0xb4, 0x79, 0xa6,
-	0x30, 0x53, 0xa5, 0xd0, 0xda, 0xef, 0xcb, 0xe6, 0x4a, 0x68, 0x42, 0x41, 0x95, 0xf3, 0x9e, 0xc3,
-	0xff, 0x47, 0x38, 0x6a, 0xf3, 0x6c, 0x88, 0x52, 0xe9, 0xee, 0x36, 0xac, 0xbc, 0x94, 0x3c, 0x3d,
-	0xc2, 0x91, 0x79, 0x17, 0x54, 0x48, 0x36, 0xa0, 0x7e, 0x92, 0xa3, 0x3c, 0x3c, 0xb0, 0x17, 0x8b,
-	0x44, 0x49, 0xde, 0x17, 0x0b, 0x6e, 0x4d, 0x6b, 0xe4, 0x42, 0x8b, 0x1c, 0x2a, 0x4c, 0x4f, 0x82,
-	0x37, 0x95, 0x48, 0x89, 0xe4, 0x0e, 0x2c, 0x77, 0x24, 0x0b, 0xb1, 0xd4, 0x30, 0xa0, 0xa5, 0x03,
-	0xec, 0x51, 0x85, 0x76, 0xcd, 0x48, 0x1b, 0xd2, 0xf1, 0x36, 0x1f, 0x08, 0x9e, 0xd9, 0x4b, 0x26,
-	0x6e, 0x48, 0xab, 0x74, 0x99, 0x4a, 0xd0, 0x5e, 0x36, 0x2a, 0x05, 0xe8, 0xea, 0x0e, 0x0b, 0x75,
-	0xd3, 0xba, 0xa9, 0x36, 0xe4, 0x7d, 0xb5, 0x80, 0x74, 0x31, 0x15, 0x09, 0x55, 0x78, 0x9c, 0xc7,
-	0xef, 0x31, 0x8b, 0xf4, 0xa4, 0x1b, 0x50, 0x1f, 0x98, 0x79, 0x8c, 0xc7, 0x92, 0xb4, 0x79, 0x2e,
-	0xa3, 0xa9, 0x41, 0x2b, 0xd4, 0x6d, 0x55, 0xd1, 0xd6, 0xb8, 0x34, 0x40, 0x1c, 0x68, 0x08, 0xca,
-	0xa2, 0x2e, 0x4b, 0xb1, 0xb4, 0xf9, 0x8f, 0xc9, 0x43, 0xb8, 0x4d, 0x13, 0x26, 0xe8, 0xa8, 0xcb,
-	0x15, 0x4d, 0xcc, 0xe4, 0xc6, 0xf3, 0x4c, 0x5c, 0xfb, 0x91, 0x66, 0x09, 0xa5, 0x7d, 0x43, 0xde,
-	0x0e, 0xac, 0x9d, 0x32, 0xd5, 0x3f, 0x90, 0xf4, 0xd3, 0x1c, 0xdb, 0x5e, 0x0b, 0xfe, 0x9b, 0x94,
-	0xe5, 0x62, 0x6a, 0xa7, 0xd6, 0x95, 0x9d, 0x3a, 0xd0, 0x78, 0x67, 0xe6, 0xc9, 0xed, 0xc5, 0xad,
-	0x9a, 0xb6, 0x5b, 0xf1, 0xde, 0x77, 0x0b, 0x6a, 0xdd, 0xd6, 0x11, 0x79, 0x0a, 0x4b, 0x1d, 0x96,
-	0xc5, 0x64, 0xc3, 0x37, 0x57, 0xeb, 0x57, 0x27, 0xed, 0xbf, 0xd0, 0x27, 0xed, 0xdc, 0x10, 0x27,
-	0xc7, 0x00, 0x93, 0x4b, 0x20, 0xae, 0x7f, 0xed, 0x87, 0xf2, 0xaf, 0x9c, 0x9a, 0xd3, 0x9c, 0x9b,
-	0xcf, 0x05, 0x79, 0x05, 0x8d, 0x6a, 0x24, 0xb2, 0x39, 0x53, 0x3c, 0xb5, 0x14, 0xe7, 0xfe, 0x9c,
-	0x6c, 0x2e, 0xf6, 0x3e, 0x40, 0xfd, 0x14, 0xc3, 0x3e, 0x55, 0xe4, 0x2d, 0xac, 0x5f, 0x3b, 0x05,
-	0xb2, 0x3d, 0xf3, 0x76, 0xf6, 0x58, 0x6e, 0x9a, 0xb8, 0x75, 0xf7, 0xe2, 0xa7, 0xbb, 0x70, 0x31,
-	0x76, 0xad, 0x6f, 0x63, 0xd7, 0xfa, 0x31, 0x76, 0xad, 0xcf, 0xbf, 0xdc, 0x85, 0x8f, 0x35, 0x2a,
-	0x58, 0xaf, 0x5e, 0x94, 0x3e, 0xf9, 0x1b, 0x00, 0x00, 0xff, 0xff, 0xe3, 0xee, 0x9b, 0x09, 0x62,
-	0x04, 0x00, 0x00,
+	// 644 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x94, 0xcf, 0x6e, 0xd3, 0x4e,
+	0x10, 0xc7, 0xeb, 0xa6, 0x4d, 0xd3, 0xe9, 0xef, 0x07, 0x68, 0x85, 0x22, 0xd7, 0x94, 0x24, 0x32,
+	0xaa, 0x84, 0x2a, 0xe1, 0x8a, 0x22, 0x81, 0xd4, 0x1b, 0x49, 0xf9, 0x53, 0x95, 0x8a, 0x2a, 0xa4,
+	0xaa, 0x84, 0x7a, 0xd9, 0xd8, 0x53, 0x67, 0x25, 0xdb, 0xbb, 0x5d, 0x6f, 0x82, 0xf2, 0x26, 0x9c,
+	0x78, 0x0d, 0x1e, 0x00, 0x0e, 0x3d, 0x72, 0xe1, 0x5a, 0x41, 0xb9, 0x71, 0xe4, 0x09, 0xd0, 0x7a,
+	0xd7, 0x34, 0xa5, 0x4d, 0x6f, 0xdc, 0xf2, 0x99, 0x19, 0x7f, 0x67, 0xbe, 0xa3, 0xd9, 0xc0, 0x22,
+	0x15, 0x2c, 0x10, 0x92, 0x2b, 0x4e, 0x6e, 0x46, 0x98, 0xf2, 0x20, 0x47, 0x39, 0x62, 0x21, 0x06,
+	0xa3, 0x87, 0xde, 0x83, 0x98, 0xa9, 0xc1, 0xb0, 0x1f, 0x84, 0x3c, 0x5d, 0x8f, 0x79, 0xcc, 0xd7,
+	0x8b, 0xba, 0xfe, 0xf0, 0xa8, 0xa0, 0x02, 0x8a, 0x5f, 0xe6, 0x7b, 0xef, 0x4e, 0xcc, 0x79, 0x9c,
+	0xe0, 0x79, 0x15, 0xa6, 0x42, 0x8d, 0x6d, 0x72, 0xc5, 0x26, 0xa9, 0x60, 0xeb, 0x34, 0xcb, 0xb8,
+	0xa2, 0x8a, 0xf1, 0x2c, 0x37, 0x59, 0xbf, 0x03, 0xb5, 0x97, 0x98, 0x24, 0xbc, 0x8b, 0xc7, 0xe4,
+	0x09, 0xcc, 0x65, 0x34, 0x45, 0xd7, 0x69, 0x39, 0xf7, 0x17, 0xdb, 0xf7, 0x7e, 0x9d, 0x36, 0x9b,
+	0x47, 0x5c, 0xa6, 0x9b, 0xbe, 0x8e, 0xfa, 0xad, 0x11, 0x4d, 0x58, 0x44, 0x15, 0x6e, 0xfa, 0x12,
+	0x8f, 0x87, 0x4c, 0x62, 0xe4, 0x77, 0x8b, 0x0f, 0xfc, 0x0d, 0x58, 0xb4, 0x22, 0xb9, 0x20, 0xab,
+	0xb0, 0xd0, 0xe1, 0x99, 0xc2, 0x4c, 0x59, 0xa1, 0xa5, 0x9f, 0xa7, 0xcd, 0x85, 0xd0, 0x84, 0xba,
+	0x65, 0xce, 0x7f, 0x0a, 0xff, 0xef, 0xe0, 0xb8, 0xc3, 0xb3, 0x11, 0x4a, 0xa5, 0xbb, 0xbb, 0xb0,
+	0xf0, 0x5c, 0xf2, 0x74, 0x07, 0xc7, 0xe6, 0xbb, 0x6e, 0x89, 0xa4, 0x0e, 0xd5, 0xfd, 0x1c, 0xe5,
+	0xf6, 0x96, 0x3b, 0x5b, 0x24, 0x2c, 0xf9, 0x1f, 0x1c, 0xb8, 0x31, 0xa9, 0x91, 0x0b, 0x2d, 0xb2,
+	0xad, 0x30, 0xdd, 0xef, 0xbe, 0x2a, 0x45, 0x2c, 0x92, 0xdb, 0x30, 0xbf, 0x27, 0x59, 0x88, 0x56,
+	0xc3, 0x80, 0x96, 0xee, 0x62, 0x9f, 0x2a, 0x74, 0x2b, 0x46, 0xda, 0x90, 0x8e, 0x77, 0xf8, 0x50,
+	0xf0, 0xcc, 0x9d, 0x33, 0x71, 0x43, 0x5a, 0xa5, 0xc7, 0x54, 0x82, 0xee, 0xbc, 0x51, 0x29, 0x40,
+	0x57, 0xef, 0xb1, 0x50, 0x37, 0xad, 0x9a, 0x6a, 0x43, 0xfe, 0x27, 0x07, 0x96, 0x77, 0xa9, 0x0a,
+	0x07, 0x18, 0xf5, 0x30, 0x15, 0x09, 0x55, 0xb8, 0x9b, 0xc7, 0x6f, 0x30, 0x8b, 0xb4, 0xe1, 0x3a,
+	0x54, 0x87, 0xc6, 0x96, 0x19, 0xd5, 0x92, 0xf6, 0xc0, 0x65, 0x34, 0xe1, 0xb7, 0x44, 0xdd, 0x5d,
+	0x15, 0xdd, 0xcd, 0xb0, 0x06, 0x88, 0x07, 0x35, 0x41, 0x59, 0xd4, 0x63, 0x29, 0xda, 0x69, 0xff,
+	0x30, 0x59, 0x83, 0x5b, 0x34, 0x61, 0x82, 0x8e, 0x7b, 0x5c, 0xd1, 0xc4, 0x2c, 0xc0, 0x8c, 0x7e,
+	0x29, 0xae, 0xe7, 0x91, 0x66, 0x17, 0xd6, 0x85, 0x21, 0xff, 0xa3, 0x03, 0xcb, 0x6d, 0x9a, 0xd0,
+	0x2c, 0xc4, 0x7f, 0xe8, 0xa2, 0x05, 0x4b, 0x48, 0x65, 0xc6, 0xb2, 0x78, 0xc2, 0xc8, 0x64, 0x48,
+	0x77, 0xca, 0x69, 0x42, 0xe5, 0xd8, 0x3a, 0xb0, 0xa4, 0x3b, 0xf5, 0xcd, 0x78, 0x76, 0xf0, 0x12,
+	0xfd, 0x55, 0x58, 0x3a, 0x60, 0x6a, 0xb0, 0x25, 0xe9, 0xbb, 0x6b, 0x46, 0xf5, 0xdb, 0xf0, 0xdf,
+	0x79, 0x59, 0x2e, 0x26, 0x8e, 0xc2, 0xb9, 0x70, 0x14, 0x1e, 0xd4, 0x5e, 0x1b, 0x0f, 0xb9, 0x3b,
+	0xdb, 0xaa, 0xe8, 0x45, 0x97, 0xbc, 0xf1, 0xd5, 0x81, 0x4a, 0xaf, 0xbd, 0x43, 0x1e, 0xc3, 0xdc,
+	0x1e, 0xcb, 0x62, 0x52, 0x0f, 0xcc, 0xb3, 0x0b, 0xca, 0x37, 0x19, 0x3c, 0xd3, 0x6f, 0xd2, 0x9b,
+	0x12, 0x27, 0xbb, 0x00, 0xe7, 0xa7, 0x4c, 0x1a, 0xc1, 0x5f, 0xff, 0x08, 0xc1, 0x85, 0xb7, 0xe2,
+	0x35, 0xaf, 0xcd, 0xe7, 0x82, 0xbc, 0x80, 0x5a, 0x69, 0x89, 0xac, 0x5c, 0x2a, 0x9e, 0x58, 0x8a,
+	0x77, 0xf7, 0x9a, 0x6c, 0x2e, 0x36, 0x3e, 0x3b, 0x50, 0x3d, 0xc0, 0x70, 0x40, 0x15, 0x39, 0x84,
+	0xfa, 0xd5, 0xc7, 0x4c, 0xd6, 0x2e, 0x69, 0x4c, 0xbd, 0xfa, 0xa9, 0x0b, 0x38, 0x84, 0xfa, 0xd5,
+	0x47, 0x76, 0x85, 0xfa, 0xd4, 0x6b, 0x9c, 0xa6, 0xde, 0x5e, 0x3e, 0xf9, 0xde, 0x98, 0x39, 0x39,
+	0x6b, 0x38, 0x5f, 0xce, 0x1a, 0xce, 0xb7, 0xb3, 0x86, 0xf3, 0xfe, 0x47, 0x63, 0xe6, 0x6d, 0x85,
+	0x0a, 0xd6, 0xaf, 0x16, 0xa5, 0x8f, 0x7e, 0x07, 0x00, 0x00, 0xff, 0xff, 0x42, 0x57, 0x9a, 0xa0,
+	0x90, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -533,7 +583,8 @@ var _TBK_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WechatClient interface {
-	TemplateMsgSend(ctx context.Context, in *TemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error)
+	MatchedTemplateMsgSend(ctx context.Context, in *MatchedTemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error)
+	BalanceTemplateMsgSend(ctx context.Context, in *BalanceTemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type wechatClient struct {
@@ -544,9 +595,18 @@ func NewWechatClient(cc *grpc.ClientConn) WechatClient {
 	return &wechatClient{cc}
 }
 
-func (c *wechatClient) TemplateMsgSend(ctx context.Context, in *TemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *wechatClient) MatchedTemplateMsgSend(ctx context.Context, in *MatchedTemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/demo.service.v1.Wechat/TemplateMsgSend", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/demo.service.v1.Wechat/MatchedTemplateMsgSend", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wechatClient) BalanceTemplateMsgSend(ctx context.Context, in *BalanceTemplateMsgSendReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/demo.service.v1.Wechat/BalanceTemplateMsgSend", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -555,35 +615,57 @@ func (c *wechatClient) TemplateMsgSend(ctx context.Context, in *TemplateMsgSendR
 
 // WechatServer is the server API for Wechat service.
 type WechatServer interface {
-	TemplateMsgSend(context.Context, *TemplateMsgSendReq) (*empty.Empty, error)
+	MatchedTemplateMsgSend(context.Context, *MatchedTemplateMsgSendReq) (*empty.Empty, error)
+	BalanceTemplateMsgSend(context.Context, *BalanceTemplateMsgSendReq) (*empty.Empty, error)
 }
 
 // UnimplementedWechatServer can be embedded to have forward compatible implementations.
 type UnimplementedWechatServer struct {
 }
 
-func (*UnimplementedWechatServer) TemplateMsgSend(ctx context.Context, req *TemplateMsgSendReq) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TemplateMsgSend not implemented")
+func (*UnimplementedWechatServer) MatchedTemplateMsgSend(ctx context.Context, req *MatchedTemplateMsgSendReq) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MatchedTemplateMsgSend not implemented")
+}
+func (*UnimplementedWechatServer) BalanceTemplateMsgSend(ctx context.Context, req *BalanceTemplateMsgSendReq) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BalanceTemplateMsgSend not implemented")
 }
 
 func RegisterWechatServer(s *grpc.Server, srv WechatServer) {
 	s.RegisterService(&_Wechat_serviceDesc, srv)
 }
 
-func _Wechat_TemplateMsgSend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TemplateMsgSendReq)
+func _Wechat_MatchedTemplateMsgSend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MatchedTemplateMsgSendReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WechatServer).TemplateMsgSend(ctx, in)
+		return srv.(WechatServer).MatchedTemplateMsgSend(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/demo.service.v1.Wechat/TemplateMsgSend",
+		FullMethod: "/demo.service.v1.Wechat/MatchedTemplateMsgSend",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WechatServer).TemplateMsgSend(ctx, req.(*TemplateMsgSendReq))
+		return srv.(WechatServer).MatchedTemplateMsgSend(ctx, req.(*MatchedTemplateMsgSendReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wechat_BalanceTemplateMsgSend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BalanceTemplateMsgSendReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WechatServer).BalanceTemplateMsgSend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/demo.service.v1.Wechat/BalanceTemplateMsgSend",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WechatServer).BalanceTemplateMsgSend(ctx, req.(*BalanceTemplateMsgSendReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -593,8 +675,12 @@ var _Wechat_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*WechatServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "TemplateMsgSend",
-			Handler:    _Wechat_TemplateMsgSend_Handler,
+			MethodName: "MatchedTemplateMsgSend",
+			Handler:    _Wechat_MatchedTemplateMsgSend_Handler,
+		},
+		{
+			MethodName: "BalanceTemplateMsgSend",
+			Handler:    _Wechat_BalanceTemplateMsgSend_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -779,7 +865,7 @@ func (m *KeyConvertResp) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TemplateMsgSendReq) Marshal() (dAtA []byte, err error) {
+func (m *MatchedTemplateMsgSendReq) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -789,12 +875,12 @@ func (m *TemplateMsgSendReq) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TemplateMsgSendReq) MarshalTo(dAtA []byte) (int, error) {
+func (m *MatchedTemplateMsgSendReq) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TemplateMsgSendReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MatchedTemplateMsgSendReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -821,6 +907,75 @@ func (m *TemplateMsgSendReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.PaidTime)
 		copy(dAtA[i:], m.PaidTime)
 		i = encodeVarintApi(dAtA, i, uint64(len(m.PaidTime)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.Title)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.OrderID) > 0 {
+		i -= len(m.OrderID)
+		copy(dAtA[i:], m.OrderID)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.OrderID)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.UserID) > 0 {
+		i -= len(m.UserID)
+		copy(dAtA[i:], m.UserID)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.UserID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BalanceTemplateMsgSendReq) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BalanceTemplateMsgSendReq) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BalanceTemplateMsgSendReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Balance) > 0 {
+		i -= len(m.Balance)
+		copy(dAtA[i:], m.Balance)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.Balance)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.Salary) > 0 {
+		i -= len(m.Salary)
+		copy(dAtA[i:], m.Salary)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.Salary)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.EarningTime) > 0 {
+		i -= len(m.EarningTime)
+		copy(dAtA[i:], m.EarningTime)
+		i = encodeVarintApi(dAtA, i, uint64(len(m.EarningTime)))
 		i--
 		dAtA[i] = 0x22
 	}
@@ -1024,7 +1179,7 @@ func (m *KeyConvertResp) Size() (n int) {
 	return n
 }
 
-func (m *TemplateMsgSendReq) Size() (n int) {
+func (m *MatchedTemplateMsgSendReq) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1051,6 +1206,42 @@ func (m *TemplateMsgSendReq) Size() (n int) {
 		n += 1 + l + sovApi(uint64(l))
 	}
 	l = len(m.Rebate)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *BalanceTemplateMsgSendReq) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.UserID)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.OrderID)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.Title)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.EarningTime)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.Salary)
+	if l > 0 {
+		n += 1 + l + sovApi(uint64(l))
+	}
+	l = len(m.Balance)
 	if l > 0 {
 		n += 1 + l + sovApi(uint64(l))
 	}
@@ -1640,7 +1831,7 @@ func (m *KeyConvertResp) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TemplateMsgSendReq) Unmarshal(dAtA []byte) error {
+func (m *MatchedTemplateMsgSendReq) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1663,10 +1854,10 @@ func (m *TemplateMsgSendReq) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TemplateMsgSendReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: MatchedTemplateMsgSendReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TemplateMsgSendReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MatchedTemplateMsgSendReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1860,6 +2051,252 @@ func (m *TemplateMsgSendReq) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Rebate = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthApi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BalanceTemplateMsgSendReq) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BalanceTemplateMsgSendReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BalanceTemplateMsgSendReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UserID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UserID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OrderID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OrderID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Title = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EarningTime", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EarningTime = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Salary", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Salary = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Balance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Balance = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

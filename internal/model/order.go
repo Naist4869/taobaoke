@@ -47,7 +47,7 @@ var OrderStatusMap = map[OrderStatus]string{
 	OrderBalance: "已结算",
 	OrderPaid:    "已付款",
 	OrderFailed:  "已失效",
-	OrderFinish:  "已成功",
+	OrderFinish:  "已收货",
 }
 
 type ShopType int

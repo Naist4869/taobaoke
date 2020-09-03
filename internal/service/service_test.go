@@ -138,13 +138,13 @@ func TestService_HighCommission(t *testing.T) {
 }
 
 func TestService_QueryOrder(t *testing.T) {
-	parseTime, err := tools.ParseTimeInLength("2020-06-11 07:34:35")
+	parseTime, err := tools.ParseTimeInLength("2020-08-29 15:27:23")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	result, err := testService.execTbkOrderDetailsGet(ctx, TbkOrderDetailsGetReq{
-		QueryType: 1,
+		QueryType: 2,
 		StartTime: parseTime,
 		EndTime:   parseTime,
 	})
@@ -201,7 +201,7 @@ func TestRegexp2(t *testing.T) {
 	fmt.Printf("%s", matches[1])
 }
 func TestOrders_TemplateMsgSend(t *testing.T) {
-	testService.orders.TemplateMsgSend(ctx, &pb.TemplateMsgSendReq{
+	testService.orders.dao.MatchedTemplateMsgSend(ctx, &pb.MatchedTemplateMsgSendReq{
 		UserID:           "oqeBd0fGbtYTmoVGhHzZ5Nf3-Egc",
 		OrderID:          "043HR",
 		Title:            "Julia编程基础",

@@ -69,7 +69,7 @@ func (d *dao) MatchedTemplateMsgSend(ctx context.Context, in *pb.MatchedTemplate
 	defer func() {
 		err := recover()
 		if err != nil {
-			d.logger.Panic("MatchedTemplateMsgSend", zap.Error(err.(error)))
+			d.logger.Error("MatchedTemplateMsgSend recover", zap.Error(err.(error)))
 		}
 	}()
 	return d.client.MatchedTemplateMsgSend(ctx, in, opts...)
@@ -80,7 +80,7 @@ func (d *dao) BalanceTemplateMsgSend(ctx context.Context, in *pb.BalanceTemplate
 	defer func() {
 		err := recover()
 		if err != nil {
-			d.logger.Panic("BalanceTemplateMsgSend", zap.Error(err.(error)))
+			d.logger.Error("BalanceTemplateMsgSend recover", zap.Error(err.(error)))
 		}
 	}()
 	return d.client.BalanceTemplateMsgSend(ctx, in, opts...)

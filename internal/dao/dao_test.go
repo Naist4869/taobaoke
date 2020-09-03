@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	pb "taobaoke/api"
 	"taobaoke/internal/model"
 	"taobaoke/tools"
 	"testing"
@@ -201,4 +202,24 @@ func Test_UpdateStatus(t *testing.T) {
 	}, &model.XLSOrder{
 		TkStatus: "13",
 	}, 90)
+}
+func TestDao_BalanceTemplateMsgSend(t *testing.T) {
+	d.BalanceTemplateMsgSend(ctx, &pb.BalanceTemplateMsgSendReq{
+		UserID:      "oqeBd0fGbtYTmoVGhHzZ5Nf3-Egc",
+		OrderID:     "abcabc",
+		Title:       "asdasdASDASDasd",
+		EarningTime: tools.Now().String(),
+		Salary:      "12.34",
+		Balance:     "16.32",
+	})
+}
+func TestDao_QueryNotWithDrawOrderByUserID(t *testing.T) {
+	Convey("查询当前用户所有未提现的单", t, func() {
+		orders, err := d.QueryNotWithDrawOrderByUserID(ctx, "oqeBd0fGbtYTmoVGhHzZ5Nf3-Egc")
+		So(err, ShouldBeNil)
+		for _, order := range orders {
+			t.Logf("%v", order)
+		}
+	})
+
 }

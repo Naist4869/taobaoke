@@ -319,7 +319,7 @@ func (s *Service) QueryRemoteOrderByTradeParentID(ctx context.Context, orders []
 			for _, remoteOrder := range result {
 				if remoteOrder.TradeParentID == o.TradeParentID {
 					// ID -> TbkOrderDetailsGetResult
-					remoteOrders.Store(order.ID, remoteOrder)
+					remoteOrders.Store(o.ID, remoteOrder)
 					return nil
 				}
 			}

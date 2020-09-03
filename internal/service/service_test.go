@@ -282,3 +282,8 @@ func TestOrders_String(t *testing.T) {
 	s := testService.orders.String()
 	t.Log(s)
 }
+func TestService_WithDraw2(t *testing.T) {
+	testService.WithDraw(ctx, &pb.WithDrawReq{
+		UserID: "oqeBd0fGbtYTmoVGhHzZ5Nf3-Egc",
+	})
+}

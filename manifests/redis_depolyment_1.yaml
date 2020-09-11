@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  labels:
+    app: redis
+  namespace: redis
+spec:
+  ports:
+    - name: redis-port
+      port: 6379
+  selector:
+    app: redis
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis
+  namespace: redis
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+ name: openebs1
+ namespace: redis
+spec:
+ storageClassName: openebs-hostpath
+ accessModes:
+ - ReadWriteOnce
+ resources:
+  requests:
+   storage: 5Gi
+
+---  
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: redis
+subjects:
+  - kind: ServiceAccount
+    name: redis
+    namespace: redis
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      serviceAccountName: redis
+      containers:
+      - name: redis
+        image: registry.hub.docker.com/bitnami/redis:latest
+        command:
+          - /opt/bitnami/scripts/redis/run.sh
+        env:
+        - name: REDIS_PASSWORD
+          value: "123"
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "300m"
+        ports:
+          - protocol: "TCP"
+            name:  redis
+            containerPort: 6379
+        volumeMounts:
+          - name: redis-data
+            mountPath: /bitnami/redis/data
+
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim: 
+          claimName: openebs1
+          
+       

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taobaoke
+spec:
+  replicas: 2
+  minReadySeconds: 5
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: taobaoke
+  template:
+    metadata:
+      labels:
+        app: taobaoke
+    spec:
+      containers:
+      - name: taobaoke
+        image: registry.hub.docker.com/naist4869/taobaoke:latest
+        command:
+          - "./taobaoke"
+          - "-conf"
+          - "configs"
+        ports:
+        - containerPort: 1241
+        - containerPort: 12341
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  taobaoke-svc
+spec:
+  selector:
+    app:  taobaoke
+  ports:
+  - name:  grpc
+    port:  1241
+    targetPort:  1241
+  - name: web
+    port: 12341
+    targetPort: 12341

@@ -145,14 +145,14 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 	}
 	nonce := tools.MakeNonce()
 	for {
+		if adZoneID == 0 {
+			err = fmt.Errorf("请稍后再试:(%w)", err)
+			return nil, err
+		}
 		ok, err := s.dao.SetNXToUnmatch(ctx, r.ItemID, adZoneID, nonce)
 		if err != nil || ok != true {
 			adZoneID = getadZoneID()
 			continue
-		}
-		if adZoneID == 0 {
-			err = fmt.Errorf("请稍后再试:(%w)", err)
-			return nil, err
 		}
 		break
 	}

@@ -1,0 +1,16 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: mongo
+  namespace: mongo
+spec:
+  entryPoints:
+  - mongo  # 需要通过静态方式开启 mongo 的入口点
+  routes:
+  - match: HostSNI(`*`)
+    services:
+    - name: mongo
+      port: 27017
+
+### 可选 暴漏mongo给外网 内网正常用coredns的mongo-0.mongo.mongo.svc.cluster.local:27017   无头服务  clusterIP: None  podname.servicename.namespace.svc.cluster.local
+### 只在创建mongo用户的时候用  因为不安全  不使用通配符'*'的话需要tls

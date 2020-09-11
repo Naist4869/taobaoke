@@ -1,0 +1,33 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: taobaokenotls
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`itaobao.co`) && && PathPrefix(`/m`)
+      kind: Rule
+      services:
+        - name: taobaoke-svc
+          port: 12341
+
+---
+#apiVersion: traefik.containo.us/v1alpha1
+#kind: IngressRoute
+#metadata:
+#  name: taobaoketls
+#  namespace: default
+#spec:
+#  entryPoints:
+#    - websecure
+#  routes:
+#    ##使用了阿里dnsChallenge可以申请通配符证书
+#    - match: Host(`v1.tvmao.co`)
+#      kind: Rule
+#      services:
+#        - name: taobaoke-svc
+#          port: 12341
+#  tls:
+#    certResolver: myresolver

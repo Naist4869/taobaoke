@@ -32,6 +32,7 @@ func NewOrders(dao dao.OrderMatchService, logger *log.Logger, metrics *tbkMetric
 		terminalID: os.Getenv("HOSTNAME"),
 		metrics:    metrics,
 	}
+	go o.Monitor()
 	return o
 
 }

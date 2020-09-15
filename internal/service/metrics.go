@@ -22,8 +22,8 @@ const (
 	withdrawCounters = "withdrawCounters"
 	// 平台净利润
 	profitCounters = "profitCounters"
-	// 协程数量
-	goroutinesGauge = "goroutines"
+	// 未结算订单数量
+	unbalanceOrderGauge = "unbalanceOrder"
 )
 
 type MetricArguments struct {
@@ -58,7 +58,7 @@ type tbkMetrics struct {
 	// 平台净利润  暂时不用
 	profitCounters prometheus.Counter
 	// 协程数量
-	goroutinesGauge *prometheus.GaugeVec
+	unbalanceOrderNum *prometheus.GaugeVec
 }
 
 func (t *tbkMetrics) init(metrics metrics.Metrics) error {
@@ -67,7 +67,7 @@ func (t *tbkMetrics) init(metrics metrics.Metrics) error {
 	t.followFailCounters = metrics.CounterVec[followFailCounters]
 	t.withdrawCounters = metrics.Counters[withdrawCounters]
 	t.profitCounters = metrics.Counters[profitCounters]
-	t.goroutinesGauge = metrics.GaugeVec[goroutinesGauge]
+	t.unbalanceOrderNum = metrics.GaugeVec[unbalanceOrderGauge]
 	t.followHistogram = metrics.HistogramVec[followHistogram]
 	return tools.NotNil(t, nil, nil)
 }
@@ -95,9 +95,8 @@ func (t *tbkMetrics) addFollowFailCounters(terminalID string) {
 	}).Inc()
 }
 
-// 我记得pprof有
-func (t *tbkMetrics) goroutinesNum(terminalID string, num float64) {
-	t.goroutinesGauge.With(map[string]string{
+func (t *tbkMetrics) setUnbalanceOrderNum(terminalID string, num float64) {
+	t.unbalanceOrderNum.With(map[string]string{
 		"terminalID": terminalID,
 	}).Set(num)
 }
@@ -150,8 +149,8 @@ func NewMetrics() (*tbkMetrics, error) {
 		},
 		GaugeVec: []prometheus.GaugeOpts{
 			{
-				Name: goroutinesGauge,
-				Help: "协程数量",
+				Name: unbalanceOrderGauge,
+				Help: "未结算订单数量",
 			},
 		},
 		GaugeVecLabels: [][]string{

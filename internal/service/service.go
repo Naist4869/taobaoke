@@ -204,13 +204,13 @@ func (s *Service) Monitor() {
 // 状态变更监控
 func (s *Service) MonitorMarch() {
 	for range time.Tick(time.Hour) {
-
 		ctx := context.Background()
 		orders, err := s.dao.MatchGetAll(ctx)
 		if err != nil {
 			s.logger.Error("MonitorMarch", zap.Error(err))
 			continue
 		}
+		s.orders.metrics.setUnbalanceOrderNum(s.orders.terminalID, float64(len(orders)))
 		remoteOrders, err := s.QueryRemoteOrderByTradeParentID(ctx, orders)
 		if err != nil {
 			s.logger.Error("MonitorMarch", zap.Error(err))

@@ -5,10 +5,17 @@ metadata:
   labels:
     app: redis
   namespace: redis
+  annotations:
+   prometheus.io/scrape: "true"
+   prometheus.io/port: "9121"
+    
+    
 spec:
   ports:
     - name: redis-port
       port: 6379
+    - name: prom
+      port: 9121
   clusterIP: None
   selector:
     app: redis

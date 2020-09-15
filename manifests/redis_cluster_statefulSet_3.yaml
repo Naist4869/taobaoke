@@ -74,6 +74,14 @@ spec:
             requests:
               cpu: 200m
               memory: 256Mi
+        - name: redis-exporter
+          image: oliver006/redis_exporter:latest
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          ports:
+            - containerPort: 9121
       volumes:
         - name:  redis-conf
           configMap:

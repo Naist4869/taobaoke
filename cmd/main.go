@@ -22,6 +22,7 @@ func main() {
 	flag.Parse()
 	fmt.Println("Version:", Version)
 	fmt.Println("Build Time:", Build)
+	fmt.Println("HOSTNAME: ", os.Getenv("HOSTNAME"))
 	log.Init(nil) // debug flag: log.dir={path}
 	defer log.Close()
 	log.Info("taobaoke start")

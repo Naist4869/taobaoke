@@ -64,9 +64,13 @@ type RedisConfig struct {
 	// but idle connections are still discarded by the client
 	// if IdleTimeout is set.
 	IdleCheckFrequency xtime.Duration
+
+	// Cluster
+	// A seed list of host:port addresses of cluster nodes.
+	Addrs []string
 }
 
-func NewRedis() (r *redis.Client, cf func(), err error) {
+func NewRedis() (r *redis.ClusterClient, cf func(), err error) {
 	var (
 		cfg RedisConfig
 		ct  paladin.Map
@@ -77,11 +81,23 @@ func NewRedis() (r *redis.Client, cf func(), err error) {
 	if err = ct.Get("Client").UnmarshalTOML(&cfg); err != nil {
 		return
 	}
-	r = redis.NewClient(&redis.Options{
-		Network:            cfg.Network,
-		Addr:               cfg.Addr,
+
+	//r = redis.NewClient(&redis.Options{
+	//	Network:            cfg.Network,
+	//	Addr:               cfg.Addr,
+	//	Password:           cfg.Password,
+	//	DB:                 cfg.DB,
+	//	DialTimeout:        time.Duration(cfg.DialTimeout),
+	//	ReadTimeout:        time.Duration(cfg.ReadTimeout),
+	//	WriteTimeout:       time.Duration(cfg.WriteTimeout),
+	//	IdleTimeout:        time.Duration(cfg.IdleTimeout),
+	//	IdleCheckFrequency: time.Duration(cfg.IdleCheckFrequency),
+	//})
+	//cf = func() { r.Close() }
+
+	r = redis.NewClusterClient(&redis.ClusterOptions{
+		Addrs:              cfg.Addrs,
 		Password:           cfg.Password,
-		DB:                 cfg.DB,
 		DialTimeout:        time.Duration(cfg.DialTimeout),
 		ReadTimeout:        time.Duration(cfg.ReadTimeout),
 		WriteTimeout:       time.Duration(cfg.WriteTimeout),
@@ -89,6 +105,7 @@ func NewRedis() (r *redis.Client, cf func(), err error) {
 		IdleCheckFrequency: time.Duration(cfg.IdleCheckFrequency),
 	})
 	cf = func() { r.Close() }
+
 	return
 }
 
@@ -244,6 +261,7 @@ func (d *dao) MatchGetAll(ctx context.Context) ([]*model.Order, error) {
 	}
 	return all, nil
 }
+
 func (d *dao) DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n int64, err error) {
 	if len(tradeParentIDs) == 0 {
 		return
@@ -255,6 +273,15 @@ func (d *dao) DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n
 	}
 	return
 }
+func (d *dao) PSubscribeKeyspace() <-chan *redis.Message {
+	// https://redis.io/topics/notifications
+	index := strings.Index(_unmatch, ":")
+	// __keyspace@0__:unmatch:*
+	channels := "__keyspace@0__" + _unmatch[:index+1] + "*"
+	subscribe := d.redis.PSubscribe(context.Background(), channels)
+	return subscribe.Channel()
+}
+
 func (d *dao) DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error) {
 	itemID := order.ItemID
 	adZoneID := order.AdzoneID

@@ -1,9 +1,20 @@
 [Client]
 	name = "taobaoke"
 	network = "tcp"
-	addr = "127.0.0.1:16379"
+# podname.servicename.namespace.svc.cluster.local
+	addr = "redis-0.redis-service.redis.svc.cluster.local:6379"
+#    addr = "127.0.0.1:6379"
 	dialTimeout = "1s"
 	readTimeout = "1s"
 	writeTimeout = "1s"
 	idleTimeout = "10s"
+    password = "123"
 idleCheckFrequency="3s"
+    addrs=[
+    "redis-0.redis-service.redis.svc.cluster.local:6379"
+    "redis-1.redis-service.redis.svc.cluster.local:6379"
+    "redis-2.redis-service.redis.svc.cluster.local:6379"
+    "redis-3.redis-service.redis.svc.cluster.local:6379"
+    "redis-4.redis-service.redis.svc.cluster.local:6379"
+    "redis-5.redis-service.redis.svc.cluster.local:6379"
+    ]

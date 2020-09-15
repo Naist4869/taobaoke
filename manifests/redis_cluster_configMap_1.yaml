@@ -13,6 +13,7 @@ data:
     dir /var/lib/redis
     requirepass 123
     port 6379
+    notify-keyspace-events Kx
 kind: ConfigMap
 metadata:
   name: redis-conf

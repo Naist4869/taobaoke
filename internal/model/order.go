@@ -231,5 +231,5 @@ type DbMeta struct {
 }
 
 func NewOrder(id string, userID string, adzoneID int64, title string, itemID int64, picURL string, shopName string, shopType int) *Order {
-	return &Order{ID: id, UserID: userID, AdzoneID: adzoneID, Title: title, ItemID: itemID, PicURL: picURL, ShopName: shopName, ShopType: shopType}
+	return &Order{ID: id, UserID: userID, AdzoneID: adzoneID, Title: title, ItemID: itemID, PicURL: picURL, ShopName: shopName, ShopType: shopType, Timelines: []Timeline{NewTimeLine(-1, "已下单")}}
 }

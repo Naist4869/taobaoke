@@ -40,7 +40,7 @@ import (
 )
 
 //go:generate kratos tool wire
-var Provider = wire.NewSet(New, wire.Bind(new(pb.TBKServer), new(*Service)), NewLogger, NewBmClient, NewOrders)
+var Provider = wire.NewSet(New, wire.Bind(new(pb.TBKServer), new(*Service)), NewLogger, NewBmClient, NewOrders, NewMetrics)
 
 // Service service.
 type Service struct {
@@ -127,6 +127,7 @@ func (s *Service) GetServerAddr() string {
 	return paladin.String(s.ac.Get("serverAddr"), "")
 }
 func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *pb.KeyConvertResp, err error) {
+
 	deadline, _ := ctx.Deadline()
 	s.logger.Info("KeyConvert", zap.Duration("过期时间", time.Until(deadline)))
 	getadZoneID := s.GenGetAdZoneID()
@@ -158,7 +159,7 @@ func (s *Service) KeyConvert(ctx context.Context, req *pb.KeyConvertReq) (resp *
 	}
 
 	order := model.NewOrder(id, req.UserID, adZoneID, r.Title, r.ItemID, r.PicURL, r.ShopName, r.ShopType)
-	if err = s.orders.Add(ctx, order, nonce); err != nil {
+	if err = s.orders.Add(ctx, order, nonce, deadline); err != nil {
 		return
 	}
 	query := url.Values{}
@@ -238,6 +239,7 @@ func (s *Service) MonitorMarch() {
 
 // 订单状态变更监控 实现有两种  一种是提现的时候才查单   一种是每个小时都查一边数据库里的单 目前先实现第一种吧 因为是实时的
 func (s *Service) WithDraw(ctx context.Context, req *pb.WithDrawReq) (*pb.WithDrawResp, error) {
+
 	orders, err := s.dao.QueryNotWithDrawOrderByUserID(ctx, req.UserID)
 	if err != nil {
 		return nil, err
@@ -290,6 +292,8 @@ func (s *Service) WithDraw(ctx context.Context, req *pb.WithDrawReq) (*pb.WithDr
 		s.logger.Error("WithDraw", zap.Error(err), zap.Strings("待更新的withdrawSlice", withdrawSlice))
 		return nil, err
 	}
+	s.orders.metrics.withdrawCounters.Add(totalSalary)
+
 	return &pb.WithDrawResp{
 		Rebate:   strconv.FormatFloat(totalSalary/100, 'f', -1, 64),
 		OrderIDs: withdrawSlice,

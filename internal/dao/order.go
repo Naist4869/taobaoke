@@ -10,6 +10,8 @@ import (
 	"taobaoke/internal/model"
 	"taobaoke/tools"
 
+	"github.com/go-redis/redis/v8"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 
@@ -63,6 +65,7 @@ type OrderMatchService interface {
 	MatchGetAll(ctx context.Context) ([]*model.Order, error)
 	ExistInUnmatch(ctx context.Context, itemID, adZoneID int64) (exist bool, err error)
 	DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error)
+	PSubscribeKeyspace() <-chan *redis.Message // 到时候做转发 避免依赖
 	HSetNXToMatch(ctx context.Context, order *model.Order) (ok bool, err error)
 	DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n int64, err error)
 }

@@ -2,7 +2,10 @@ package tools
 
 import (
 	"crypto/rand"
+	"errors"
+	"fmt"
 	"math/big"
+	"reflect"
 )
 
 func MakeNonce() (nonce string) {
@@ -50,4 +53,35 @@ func separate(number string) (integerPart string, decimalPart string) {
 		decimalPart = number[len(number)-2:]
 	}
 	return
+}
+func NotNil(data interface{}, include []string, exclude []string) error {
+
+	value := reflect.ValueOf(data)
+
+	t := value.Type()
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		value = value.Elem()
+	}
+	switch t.Kind() {
+	case reflect.Struct, reflect.Slice, reflect.Array, reflect.Map, reflect.Chan, reflect.Func:
+	default:
+		return errors.New("不支持的类型")
+	}
+	if len(include) == 0 && len(exclude) == 0 {
+		for i := 0; i < value.NumField(); i++ {
+			field := value.Field(i)
+			switch field.Type().Kind() {
+			case reflect.Ptr, reflect.Slice, reflect.Array, reflect.Map, reflect.Chan, reflect.Func:
+				if value.Field(i).IsNil() {
+					return fmt.Errorf("字段[%s]为nil", t.Field(i).Name)
+				}
+			default:
+				continue
+
+			}
+
+		}
+	}
+	return nil
 }

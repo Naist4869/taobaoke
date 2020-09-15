@@ -49,7 +49,7 @@ var statues = []model.OrderStatus{model.OrderIllegal, model.OrderFailed, model.O
 // dao dao.
 type dao struct {
 	db           *sql.DB
-	redis        *redis.Client
+	redis        *redis.ClusterClient
 	mc           *memcache.Memcache
 	mongo        *mongo.Client
 	orderClient  *OrderClient
@@ -165,11 +165,11 @@ func (d *dao) FindOrderByTradeParentID(ctx context.Context, ids []string) (order
 }
 
 // New new a dao and return.
-func New(logger *log.Logger, r *redis.Client, mc *memcache.Memcache, db *sql.DB, mongo *mongo.Client, orderClient *OrderClient) (d Dao, cf func(), err error) {
+func New(logger *log.Logger, r *redis.ClusterClient, mc *memcache.Memcache, db *sql.DB, mongo *mongo.Client, orderClient *OrderClient) (d Dao, cf func(), err error) {
 	return newDao(logger, r, mc, db, mongo, orderClient)
 }
 
-func newDao(logger *log.Logger, r *redis.Client, mc *memcache.Memcache, db *sql.DB, mongo *mongo.Client, orderClient *OrderClient) (d *dao, cf func(), err error) {
+func newDao(logger *log.Logger, r *redis.ClusterClient, mc *memcache.Memcache, db *sql.DB, mongo *mongo.Client, orderClient *OrderClient) (d *dao, cf func(), err error) {
 	var cfg struct {
 		DemoExpire xtime.Duration
 	}
@@ -259,6 +259,7 @@ func newDao(logger *log.Logger, r *redis.Client, mc *memcache.Memcache, db *sql.
 			return
 		}))
 		statusesMap.Put(model.OrderBalance, HandlerFunc(func(c *Context) {
+
 			err := c.engine.UpdateOrderBalanceStatus(c.ctx, c.localOrder.ID, c.localOrder.TradeParentID, c.updateArg.EarningTime, c.updateArg.TotalCommissionFee, c.SalaryScale)
 			if err != nil {
 				c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))

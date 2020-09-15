@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	pb "taobaoke/api"
 	"taobaoke/internal/dao"
 	"taobaoke/internal/model"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -15,21 +17,30 @@ import (
 )
 
 type orders struct {
-	dao     dao.OrderMatchService
-	client  pb.WechatClient
-	doStart func()
-	logger  *log.Logger // 日志器
+	terminalID string
+	dao        dao.OrderMatchService
+	client     pb.WechatClient
+	doStart    func()
+	logger     *log.Logger // 日志器
+	metrics    *tbkMetrics // 度量指标
 }
 
-func NewOrders(dao dao.OrderMatchService, logger *log.Logger) *orders {
+func NewOrders(dao dao.OrderMatchService, logger *log.Logger, metrics *tbkMetrics) *orders {
 	o := &orders{
-		logger: logger.With(zap.String("模块名", "订单管理")),
-		dao:    dao,
+		logger:     logger.With(zap.String("模块名", "订单管理")),
+		dao:        dao,
+		terminalID: os.Getenv("HOSTNAME"),
+		metrics:    metrics,
 	}
 	return o
 
 }
-
+func (o *orders) Monitor() {
+	for message := range o.dao.PSubscribeKeyspace() {
+		o.logger.Info("监听到消息", zap.String("message", message.String()))
+		o.metrics.addFollowFailCounters(o.terminalID)
+	}
+}
 func (o *orders) String() string {
 	builder := &strings.Builder{}
 	unmatchedCount, unmatched := o.unmatchedString()
@@ -73,7 +84,10 @@ func (o *orders) Match(orders []TbkOrderDetailsGetResult) {
 	return
 }
 
-func (o *orders) Add(ctx context.Context, order *model.Order, nonce string) (err error) {
+func (o *orders) Add(ctx context.Context, order *model.Order, nonce string, deadline time.Time) (err error) {
+	defer func() {
+		o.metrics.addPlaceCount(o.terminalID, err == nil, time.Since(deadline))
+	}()
 	o.logger.Info("添加本地订单记录", zap.Int64("渠道ID", order.AdzoneID), zap.String("用户ID", order.UserID), zap.Int64("商品ID", order.ItemID))
 
 	ok, err := o.dao.SetToUnmatch(ctx, order.ItemID, order.AdzoneID, order, nonce)
@@ -81,6 +95,7 @@ func (o *orders) Add(ctx context.Context, order *model.Order, nonce string) (err
 		err = fmt.Errorf("orders Add fail: %w", err)
 		return err
 	}
+
 	return
 }
 
@@ -113,15 +128,22 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 			o.logger.Error("MatchingUnmatched", zap.Error(err))
 			continue
 		}
-		o.logger.Info("订单已经匹配", zap.Any("远程订单", remoteOrder), zap.Any("本地订单", localOrder))
 		if err = o.makeMatched(localOrder, remoteOrder); err != nil {
 			o.logger.Error("MatchingUnmatched", zap.Error(err))
 			continue
 		}
+		o.logger.Info("订单已经匹配", zap.Any("远程订单", remoteOrder), zap.Any("本地订单", localOrder))
 	}
 }
 
 func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetailsGetResult) (err error) {
+
+	defer func() {
+		if len(localOrder.Timelines) > 0 && localOrder.Timelines[0].Action == "已下单" {
+			o.metrics.addFollowSince(o.terminalID, err == nil, time.Since(time.Time(localOrder.Timelines[0].Time)))
+		}
+		o.logger.Error("makeMatched", zap.String("原因", "本地订单没有下单时间"), zap.Any("RemoteOrder", remoteOrder), zap.Any("LocalOrder", localOrder))
+	}()
 	if err = localOrder.MakeMatched(remoteOrder.ClickTime, remoteOrder.TkCreateTime, remoteOrder.TradeID, remoteOrder.TradeParentID, remoteOrder.PubSharePreFee, remoteOrder.ItemPrice, model.OrderStatus(remoteOrder.TkStatus) == model.OrderFailed); err != nil {
 		o.logger.Error("makeMatched", zap.Error(err), zap.Any("RemoteOrder", remoteOrder), zap.Any("LocalOrder", localOrder))
 		return err
@@ -133,6 +155,7 @@ func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetail
 
 	if _, err = o.dao.DelFromUnmatchAndSetToMatch(context.Background(), localOrder); err != nil {
 		o.logger.Error("makeMatched", zap.Error(err))
+		err = nil
 	}
 
 	_, _ = o.dao.MatchedTemplateMsgSend(context.Background(), &pb.MatchedTemplateMsgSendReq{

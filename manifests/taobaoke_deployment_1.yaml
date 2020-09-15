@@ -28,6 +28,45 @@ spec:
         ports:
         - containerPort: 1241
         - containerPort: 12341
+        volumeMounts:
+          - name: "taobaoke-res"
+            mountPath: "/app/res"
+          - name: "taobaoke-conf"
+            mountPath: "/app/configs"
+      volumes:
+        - name: "taobaoke-res"
+          configMap:
+            name: "taobaoke-res"
+            items:
+              - key: "item.tmpl"
+                path: "item.tmpl"
+              - key: "item.css"
+                path: "css/item.css"
+              - key: "clipboard.js"
+                path: "js/clipboard.js"
+              - key: "draw_trend.js"
+                path: "js/draw_trend.js"
+              - key: "jquery-3.5.1.min.js"
+                path: "js/jquery-3.5.1.min.js"
+        - name:  "taobaoke-conf"
+          configMap:
+            name: "taobaoke-conf"
+            items:
+              - key: "application.toml"
+                path: "application.toml"
+              - key: "db.toml"
+                path: "db.toml"
+              - key: "grpc.toml"
+                path: "grpc.toml"
+              - key: "http.toml"
+                path: "http.toml"
+              - key: "logger.toml"
+                path: "logger.toml"
+              - key: "memcache.toml"
+                path: "memcache.toml"
+              - key: "redis.toml"
+                path: "redis.toml"
+
 
 ---
 kind: Service
@@ -47,3 +86,5 @@ spec:
   - name: web
     port: 12341
     targetPort: 12341
+##  kubectl create configmap taobaoke-res --from-file item.tmpl --from-file item.css --from-file clipboard.js --from-file draw_trend.js --from-file jquery-3.5.1.min.js
+##  kubectl create configmap taobaoke-conf --from-file=application.toml --from-file=grpc.toml --from-file=logger.toml --from-file=redis.toml --from-file=db.toml --from-file=http.toml --from-file=memcache.toml

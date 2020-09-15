@@ -104,7 +104,7 @@ func item(c *bm.Context) {
 			order.TrendInfo.TKL = tkl
 			log.Info("重新设置淘口令,商品ID: %s,新口令:%s", order.ID, order.TrendInfo.TKL)
 		}
-		svr.UpdateToUnmatch(c, order.ItemID, order.AdzoneID, order)
+		_, _ = svr.UpdateToUnmatch(c, order.ItemID, order.AdzoneID, order)
 	}
 	t := template.Must(template.New("item.tmpl").Delims("{{", "}}").ParseFiles("./res/item.tmpl"))
 	err = t.Execute(c.Writer, map[string]interface{}{
@@ -112,7 +112,7 @@ func item(c *bm.Context) {
 		"picURL":     order.PicURL,
 		"tkl":        order.TrendInfo.TKL,
 		"shopName":   order.ShopName,
-		"serverAddr": svr.GetServerAddr(),
+		"serverAddr": template.URL(svr.GetServerAddr()),
 		"trendInfo":  order.TrendInfo,
 	})
 	if err != nil {

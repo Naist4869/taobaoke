@@ -23,8 +23,8 @@ RUN echo "http://mirrors.aliyun.com/alpine/v3.12/main/" > /etc/apk/repositories 
 WORKDIR /app
 
 COPY --from=builder /usr/local/go/src/base/taobaoke ./taobaoke
-
-ADD ./configs ./configs
+# docker运行打开注释
+#ADD ./configs ./configs
 
 
 RUN chmod +x ./taobaoke

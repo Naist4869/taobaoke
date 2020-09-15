@@ -26,24 +26,6 @@ const (
 	unbalanceOrderGauge = "unbalanceOrder"
 )
 
-type MetricArguments struct {
-	Counters         []prometheus.CounterOpts
-	CounterVec       []prometheus.CounterOpts
-	CounterVecLabels [][]string
-
-	Gauges         []prometheus.GaugeOpts
-	GaugeVec       []prometheus.GaugeOpts
-	GaugeVecLabels [][]string
-
-	Histograms         []prometheus.HistogramOpts
-	HistogramVec       []prometheus.HistogramOpts
-	HistogramVecLabels [][]string
-
-	Summary          []prometheus.SummaryOpts
-	SummaryVec       []prometheus.SummaryOpts
-	SummaryVecLabels [][]string
-}
-
 type tbkMetrics struct {
 	// 下单次数
 	placeCounters *prometheus.CounterVec
@@ -57,7 +39,7 @@ type tbkMetrics struct {
 	withdrawCounters prometheus.Counter
 	// 平台净利润  暂时不用
 	profitCounters prometheus.Counter
-	// 协程数量
+	// 未结算订单数量
 	unbalanceOrderNum *prometheus.GaugeVec
 }
 

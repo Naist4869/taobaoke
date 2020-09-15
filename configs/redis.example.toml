@@ -11,10 +11,10 @@
     password = "123"
 idleCheckFrequency="3s"
     addrs=[
-    "redis-0.redis-service.redis.svc.cluster.local:6379"
-    "redis-1.redis-service.redis.svc.cluster.local:6379"
-    "redis-2.redis-service.redis.svc.cluster.local:6379"
-    "redis-3.redis-service.redis.svc.cluster.local:6379"
-    "redis-4.redis-service.redis.svc.cluster.local:6379"
+    "redis-0.redis-service.redis.svc.cluster.local:6379",
+    "redis-1.redis-service.redis.svc.cluster.local:6379",
+    "redis-2.redis-service.redis.svc.cluster.local:6379",
+    "redis-3.redis-service.redis.svc.cluster.local:6379",
+    "redis-4.redis-service.redis.svc.cluster.local:6379",
     "redis-5.redis-service.redis.svc.cluster.local:6379"
     ]

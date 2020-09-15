@@ -161,7 +161,6 @@ func NewMetrics() (*tbkMetrics, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.Init()
 	tbkMetrics := &tbkMetrics{}
 	if err := tbkMetrics.init(m); err != nil {
 		return nil, err

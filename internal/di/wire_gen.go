@@ -19,7 +19,7 @@ func InitApp() (*App, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	redis, cleanup2, err := dao.NewRedis()
+	clusterClient, cleanup2, err := dao.NewRedis()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -54,7 +54,7 @@ func InitApp() (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	daoDao, cleanup6, err := dao.New(logger, redis, memcache, db, client, orderClient)
+	daoDao, cleanup6, err := dao.New(logger, clusterClient, memcache, db, client, orderClient)
 	if err != nil {
 		cleanup5()
 		cleanup4()
@@ -73,7 +73,18 @@ func InitApp() (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	orders := service.NewOrders(daoDao, logger)
+	tbkMetrics, err := service.NewMetrics()
+	if err != nil {
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	orders := service.NewOrders(daoDao, logger, tbkMetrics)
 	serviceService, cleanup8, err := service.New(daoDao, logger, blademasterClient, orders)
 	if err != nil {
 		cleanup7()

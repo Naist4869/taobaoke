@@ -40,7 +40,7 @@ import (
 )
 
 //go:generate kratos tool wire
-var Provider = wire.NewSet(New, wire.Bind(new(pb.TBKServer), new(*Service)), NewLogger, NewBmClient, NewOrders, NewMetrics)
+var Provider = wire.NewSet(New, wire.Bind(new(pb.TBKServer), new(*Service)), wire.Bind(new(Server), new(*Service)), NewLogger, NewBmClient, NewOrders, NewMetrics)
 
 // Service service.
 type Service struct {

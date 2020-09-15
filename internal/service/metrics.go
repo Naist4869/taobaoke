@@ -11,19 +11,19 @@ import (
 
 const (
 	// 下单次数
-	placeCounters = "placeCounters"
+	placeCounters = "tbk_place_counters"
 	// 下单耗时
-	placeHistogram = "place"
+	placeHistogram = "tbk_place_since"
 	// 跟单超时失败次数
-	followFailCounters = "followFailCounters"
+	followFailCounters = "tbk_follow_fail_counters"
 	// 跟单次数
-	followHistogram = "follow"
+	followHistogram = "tbk_follow"
 	// 提现金额
-	withdrawCounters = "withdrawCounters"
+	withdrawCounters = "tbk_withdraw_counters"
 	// 平台净利润
-	profitCounters = "profitCounters"
+	profitCounters = "tbk_profit_counters"
 	// 未结算订单数量
-	unbalanceOrderGauge = "unbalanceOrder"
+	unbalanceOrderGauge = "tbk_unbalance_order_num"
 )
 
 type tbkMetrics struct {

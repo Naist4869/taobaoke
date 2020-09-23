@@ -9,6 +9,7 @@ import (
 	pb "taobaoke/api"
 	"taobaoke/internal/dao"
 	"taobaoke/internal/model"
+	"taobaoke/tools"
 	"time"
 
 	"go.uber.org/zap"
@@ -116,14 +117,6 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 			o.logger.Info("订单本地不存在，跳过")
 			continue
 		}
-		if model.OrderStatus(remoteOrder.TkStatus).Failed() {
-			o.logger.Info("发现已失效订单，跳过", zap.Any("远程订单", remoteOrder))
-			continue
-		}
-		if remoteOrder.AlipayTotalPrice == "" {
-			o.logger.Info("订单还没有付款金额，跳过", zap.Any("远程订单", remoteOrder))
-			continue
-		}
 		localOrder, err := o.dao.GetUnmatch(context.Background(), remoteOrder.ItemID, remoteOrder.AdzoneID)
 		if err != nil {
 			o.logger.Error("MatchingUnmatched", zap.Error(err))
@@ -140,12 +133,20 @@ func (o *orders) MatchingUnmatched(unmatchedOrders []TbkOrderDetailsGetResult) {
 func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetailsGetResult) (err error) {
 
 	defer func() {
-		if len(localOrder.Timelines) > 0 && localOrder.Timelines[0].Action == "已下单" {
-			o.metrics.addFollowSince(o.terminalID, err == nil, time.Since(time.Time(localOrder.Timelines[0].Time)))
+		checkedTime := tools.Time{}
+		for _, action := range localOrder.Timelines {
+			if action.Action == model.OrderChecked.String() {
+				checkedTime = action.Time
+				continue
+			}
+			if action.Action == model.OrderCreate.String() && !checkedTime.IsZero() {
+				o.metrics.addFollowSince(o.terminalID, err == nil, action.Time.Sub(checkedTime))
+				return
+			}
 		}
-		o.logger.Error("makeMatched", zap.String("原因", "本地订单没有下单时间"), zap.Any("RemoteOrder", remoteOrder), zap.Any("LocalOrder", localOrder))
+		o.logger.Error("makeMatched", zap.String("原因", "本地订单没有下单时间,创建下单时间指标失败"), zap.Any("远程订单", remoteOrder), zap.Any("本地订单", localOrder))
 	}()
-	if err = localOrder.MakeMatched(remoteOrder.ClickTime, remoteOrder.TkCreateTime, remoteOrder.TradeID, remoteOrder.TradeParentID, remoteOrder.PubSharePreFee, remoteOrder.ItemPrice, model.OrderStatus(remoteOrder.TkStatus) == model.OrderFailed); err != nil {
+	if err = localOrder.MakeMatched(remoteOrder.ClickTime, remoteOrder.TkCreateTime, remoteOrder.TradeID, remoteOrder.TradeParentID, remoteOrder.PubSharePreFee, remoteOrder.ItemPrice); err != nil {
 		o.logger.Error("makeMatched", zap.Error(err), zap.Any("RemoteOrder", remoteOrder), zap.Any("LocalOrder", localOrder))
 		return err
 	}
@@ -158,15 +159,21 @@ func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetail
 		o.logger.Error("makeMatched", zap.Error(err))
 		err = nil
 	}
-
-	_, _ = o.dao.MatchedTemplateMsgSend(context.Background(), &pb.MatchedTemplateMsgSendReq{
-		UserID:           localOrder.UserID,
-		OrderID:          localOrder.TradeParentID,
-		Title:            localOrder.Title,
-		PaidTime:         localOrder.PaidTime.String(),
-		AlipayTotalPrice: strconv.FormatFloat(float64(localOrder.AlipayTotalPrice)/100, 'f', -1, 64),
-		Rebate:           strconv.FormatFloat(float64(localOrder.Rebate)/100, 'f', -1, 64),
+	tools.Retry(func() (err error, mayRetry bool) {
+		_, err = o.dao.MatchedTemplateMsgSend(context.Background(), &pb.MatchedTemplateMsgSendReq{
+			UserID:           localOrder.UserID,
+			OrderID:          localOrder.TradeParentID,
+			Title:            localOrder.Title,
+			PaidTime:         localOrder.PaidTime.String(),
+			AlipayTotalPrice: strconv.FormatFloat(float64(localOrder.AlipayTotalPrice)/100, 'f', -1, 64),
+			Rebate:           strconv.FormatFloat(float64(localOrder.Rebate)/100, 'f', -1, 64),
+		})
+		if err != nil {
+			o.logger.Error("makeMatched", zap.Error(err))
+		}
+		return err, true
 	})
+
 	o.logger.Info("查单队列", zap.String("状态", o.String()))
 	return
 }

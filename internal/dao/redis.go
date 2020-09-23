@@ -217,24 +217,52 @@ func (d *dao) GetAllUnmatch(ctx context.Context) (map[string]*model.Order, error
 	if err := iter.Err(); err != nil {
 		return nil, err
 	}
-	vSlice, err := d.redis.MGet(ctx, kSlice...).Result()
-	if err != nil {
+	pipe := d.redis.Pipeline()
+	stringCmdSlice := make([]*redis.StringCmd, len(kSlice))
+	for i, key := range kSlice {
+		stringCmdSlice[i] = pipe.Get(ctx, key)
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		d.logger.Error("GetAllUnmatch", zap.Error(err))
 		return nil, err
 	}
-	for i, value := range vSlice {
-		if value == nil {
-			continue
-		}
-		v := &model.Order{}
-		if err := json.Unmarshal([]byte(value.(string)), v); err != nil {
-			d.logger.Error("GetAllUnmatch", zap.Error(err), zap.String("值", iter.Val()))
-			continue
-		}
-		if _, exist := all[kSlice[i]]; !exist {
-			all[kSlice[i]] = v
-		}
+	for i, stringCmd := range stringCmdSlice {
+		if stringCmd.Err() != redis.Nil {
+			if jsonByte, err := stringCmd.Bytes(); err != nil {
+				continue
+			} else {
+				v := &model.Order{}
+				if err := json.Unmarshal(jsonByte, v); err != nil {
+					d.logger.Error("GetAllUnmatch", zap.Error(err), zap.ByteString("值", jsonByte))
+					continue
+				}
+				if _, exist := all[kSlice[i]]; !exist {
+					all[kSlice[i]] = v
+				}
+			}
 
+		}
 	}
+
+	// https://github.com/go-redis/redis/issues/291  用cluster 的mget会出现CROSSSLOT Keys in request don't hash to the same slot错误
+	//vSlice, err := d.redis.MGet(ctx, kSlice...).Result()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//for i, value := range vSlice {
+	//	if value == nil {
+	//		continue
+	//	}
+	//	v := &model.Order{}
+	//	if err := json.Unmarshal([]byte(value.(string)), v); err != nil {
+	//		d.logger.Error("GetAllUnmatch", zap.Error(err), zap.String("值", iter.Val()))
+	//		continue
+	//	}
+	//	if _, exist := all[kSlice[i]]; !exist {
+	//		all[kSlice[i]] = v
+	//	}
+	//
+	//}
 	return all, nil
 }
 
@@ -276,6 +304,7 @@ func (d *dao) DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n
 func (d *dao) PSubscribeKeyspace() <-chan *redis.Message {
 	// https://redis.io/topics/notifications
 	index := strings.Index(_unmatch, ":")
+	// psubscribe '__keyspace@0__:*'
 	// __keyspace@0__:unmatch:*
 	channels := "__keyspace@0__" + _unmatch[:index+1] + "*"
 	subscribe := d.redis.PSubscribe(context.Background(), channels)

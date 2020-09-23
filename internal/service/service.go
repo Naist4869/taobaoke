@@ -303,16 +303,18 @@ func (s *Service) WithDraw(ctx context.Context, req *pb.WithDrawReq) (*pb.WithDr
 func (s *Service) QueryRemoteOrderByTradeParentID(ctx context.Context, orders []*model.Order) (remoteOrders sync.Map, err error) {
 	group := errgroup.WithCancel(ctx)
 	group.GOMAXPROCS(30)
-	for _, order := range orders {
-		o := order
-		if o.PaidTime.IsZero() {
+	for _, v := range orders {
+		// errGroup没有入参 只能分配到堆上然后靠闭包捕获了
+		order := v
+		if order.CreateTime.IsZero() {
+			s.logger.Error("QueryRemoteOrderByTradeParentID", zap.String("原因", "发现待查寻的单没有创建时间"))
 			continue
 		}
 		group.Go(func(ctx context.Context) error {
 			result, err := s.execTbkOrderDetailsGet(ctx, TbkOrderDetailsGetReq{
-				QueryType: 2,
-				StartTime: o.PaidTime,
-				EndTime:   o.PaidTime,
+				QueryType: 1,
+				StartTime: order.CreateTime,
+				EndTime:   order.CreateTime,
 			})
 			if err != nil {
 				if !errors.Is(err, QueryListEmpty{}) {
@@ -321,13 +323,13 @@ func (s *Service) QueryRemoteOrderByTradeParentID(ctx context.Context, orders []
 				return err
 			}
 			for _, remoteOrder := range result {
-				if remoteOrder.TradeParentID == o.TradeParentID {
+				if remoteOrder.TradeParentID == order.TradeParentID {
 					// ID -> TbkOrderDetailsGetResult
-					remoteOrders.Store(o.ID, remoteOrder)
+					remoteOrders.Store(order.ID, remoteOrder)
 					return nil
 				}
 			}
-			s.logger.Error("QueryRemoteOrderByTradeParentID", zap.Error(err), zap.Any("远程订单", result), zap.Any("待匹配订单", o))
+			s.logger.Error("QueryRemoteOrderByTradeParentID", zap.Error(err), zap.Any("远程订单", result), zap.Any("待匹配订单", order))
 			return nil
 		})
 	}
@@ -645,7 +647,7 @@ func (s *Service) XlsOrdersToOrders(xlsOrders []*model.XLSOrder) {
 		}
 		// userID 为空  有人掉单了来问的时候补
 		order := model.NewOrder(id, "", adZoneID, xlsOrder.ItemTitle, itemID, xlsOrder.ItemImg, xlsOrder.SellerShopTitle, shopType)
-		err = order.MakeMatched(xlsOrder.ClickTime, xlsOrder.TkCreateTime, xlsOrder.TradeID, xlsOrder.TradeParentID, xlsOrder.PubSharePreFee, xlsOrder.ItemPrice, xlsOrder.TkStatus == "13")
+		err = order.MakeMatched(xlsOrder.ClickTime, xlsOrder.TkCreateTime, xlsOrder.TradeID, xlsOrder.TradeParentID, xlsOrder.PubSharePreFee, xlsOrder.ItemPrice)
 		if err != nil {
 			continue
 		}

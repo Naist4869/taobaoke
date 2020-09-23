@@ -33,6 +33,7 @@ const (
 type OrderStatus int
 
 const (
+	OrderChecked OrderStatus = -2
 	OrderIllegal OrderStatus = -1
 	OrderCreate  OrderStatus = 0
 	OrderBalance OrderStatus = 3
@@ -42,6 +43,7 @@ const (
 )
 
 var OrderStatusMap = map[OrderStatus]string{
+	OrderChecked: "已查券",
 	OrderIllegal: "非法状态",
 	OrderCreate:  "已创建",
 	OrderBalance: "已结算",
@@ -126,7 +128,7 @@ func NewTimeLine(userID int64, action string) Timeline {
 	}
 }
 
-func (o *Order) MakeMatched(clickTime tools.Time, createTime tools.Time, tradeID string, tradeParentID string, pubSharePreFee string, ItemPrice string, isFail bool) error {
+func (o *Order) MakeMatched(clickTime tools.Time, createTime tools.Time, tradeID string, tradeParentID string, pubSharePreFee string, ItemPrice string) error {
 	rebate, err := strconv.ParseFloat(pubSharePreFee, 64)
 	if err != nil {
 		return err
@@ -138,13 +140,8 @@ func (o *Order) MakeMatched(clickTime tools.Time, createTime tools.Time, tradeID
 	o.Rebate = int64(rebate * 100)
 	o.ClickTime = clickTime
 	o.CreateTime = createTime
-	if isFail {
-		o.Status = OrderFailed
-		o.Timelines = []Timeline{NewTimeLine(-1, OrderFailed.String())}
-	} else {
-		o.Status = OrderCreate
-		o.Timelines = []Timeline{NewTimeLine(-1, OrderCreate.String())}
-	}
+	o.Status = OrderCreate
+	o.Timelines = []Timeline{NewTimeLine(-1, OrderCreate.String())}
 	o.TradeID = tradeID
 	o.TradeParentID = tradeParentID
 	o.Price = int64(itemPrice * 100)
@@ -231,5 +228,5 @@ type DbMeta struct {
 }
 
 func NewOrder(id string, userID string, adzoneID int64, title string, itemID int64, picURL string, shopName string, shopType int) *Order {
-	return &Order{ID: id, UserID: userID, AdzoneID: adzoneID, Title: title, ItemID: itemID, PicURL: picURL, ShopName: shopName, ShopType: shopType, Timelines: []Timeline{NewTimeLine(-1, "已下单")}}
+	return &Order{ID: id, UserID: userID, AdzoneID: adzoneID, Title: title, ItemID: itemID, PicURL: picURL, ShopName: shopName, ShopType: shopType, Timelines: []Timeline{NewTimeLine(-1, OrderChecked.String())}}
 }

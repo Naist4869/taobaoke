@@ -44,7 +44,7 @@ type Dao interface {
 	OrderDataService
 }
 
-var statues = []model.OrderStatus{model.OrderIllegal, model.OrderFailed, model.OrderCreate, model.OrderPaid, model.OrderFinish, model.OrderBalance}
+var statues = [...]model.OrderStatus{model.OrderIllegal, model.OrderCreate, model.OrderFailed, model.OrderPaid, model.OrderFailed, model.OrderFinish, model.OrderBalance}
 
 // dao dao.
 type dao struct {
@@ -222,7 +222,7 @@ func newDao(logger *log.Logger, r *redis.ClusterClient, mc *memcache.Memcache, d
 				}
 				return Jfinded - Ifinded
 			}
-			return 0
+			panic("statues数组不可以为空")
 		}, reflect.TypeOf(model.OrderCreate)), reflect.TypeOf(HandlerFunc(nil)))
 		// OrderIllegal 对应的方法永远取不到  因为是左开右闭区间
 		statusesMap.Put(model.OrderIllegal, HandlerFunc(func(c *Context) {
@@ -230,13 +230,17 @@ func newDao(logger *log.Logger, r *redis.ClusterClient, mc *memcache.Memcache, d
 			return
 		}))
 		statusesMap.Put(model.OrderFailed, HandlerFunc(func(c *Context) {
-			err := c.engine.UpdateOrderFailedStatus(c.ctx, c.localOrder.ID, c.localOrder.TradeParentID)
-			if err != nil {
-				c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+			// 目前观察有两种  一种是已创建-->已失效  另一种是已付款-->已失效
+			if c.updateArg.Status == model.OrderFailed {
+				err := c.engine.UpdateOrderFailedStatus(c.ctx, c.localOrder.ID, c.localOrder.TradeParentID)
+				if err != nil {
+					c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+
+				}
+				c.logger.Info("Context", zap.String("原因", "发现已失效的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
+				// 失败和结算是最终状态
 				c.Abort()
 			}
-			c.logger.Info("Context", zap.String("原因", "发现已失效的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
-
 			return
 		}))
 		statusesMap.Put(model.OrderPaid, HandlerFunc(func(c *Context) {
@@ -259,14 +263,13 @@ func newDao(logger *log.Logger, r *redis.ClusterClient, mc *memcache.Memcache, d
 			return
 		}))
 		statusesMap.Put(model.OrderBalance, HandlerFunc(func(c *Context) {
-
 			err := c.engine.UpdateOrderBalanceStatus(c.ctx, c.localOrder.ID, c.localOrder.TradeParentID, c.updateArg.EarningTime, c.updateArg.TotalCommissionFee, c.SalaryScale)
 			if err != nil {
 				c.logger.Error("Context", zap.Error(err), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
-				c.Abort()
 			}
 			c.logger.Info("Context", zap.String("原因", "发现已结算的单"), zap.Any("更新字段", c.updateArg), zap.Any("本地订单", c.localOrder))
-
+			// 失败和结算是最终状态
+			c.Abort()
 			return
 		}))
 		statusesMap.Put(model.OrderCreate, HandlerFunc(func(c *Context) {

@@ -40,6 +40,8 @@ type OrderDataService interface {
 }
 type OrderMonitor interface {
 	UpdateStatus(ctx context.Context, localOrder *model.Order, fill model.Fill, salaryScale int64)
+	DelFromMatchCache(ctx context.Context, tradeParentIDs ...string) (n int64, err error)
+	REMFromMatchSet(ctx context.Context, tradeParentID ...string) (n int64, err error)
 	FindOrderByID(ctx context.Context, id string) (order *model.Order, err error)
 	UpdateOrderFailedStatus(ctx context.Context, id string, tradeParentID string) (err error)
 	UpdateOrderPaidStatus(ctx context.Context, id string, paidTime tools.Time, AlipayTotalPrice string, IncomeRate string, pubSharePreFee string, ItemNum int) (err error)
@@ -67,7 +69,6 @@ type OrderMatchService interface {
 	DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error)
 	PSubscribeKeyspace() <-chan *redis.Message // 到时候做转发 避免依赖
 	HSetNXToMatch(ctx context.Context, order *model.Order) (ok bool, err error)
-	DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n int64, err error)
 }
 
 type OrderClient struct {

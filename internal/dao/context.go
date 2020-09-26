@@ -5,6 +5,8 @@ import (
 	"math"
 	"taobaoke/internal/model"
 
+	"go.uber.org/zap"
+
 	"github.com/Naist4869/log"
 )
 
@@ -23,6 +25,11 @@ type Context struct {
 type HandlerFunc func(*Context)
 
 func (c *Context) Next() {
+	defer func() {
+		if _, err := c.engine.DelFromMatchCache(c.ctx, []string{c.localOrder.TradeParentID}); err != nil {
+			c.logger.Error("UpdateStatus", zap.Error(err), zap.String("tradeParentID", c.localOrder.TradeParentID))
+		}
+	}()
 	c.index++
 	for c.index < int8(len(c.handlers)) {
 		c.handlers[c.index](c)

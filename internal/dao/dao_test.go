@@ -104,7 +104,7 @@ func TestDao_UnmatchGetAll(t *testing.T) {
 }
 
 func TestDao_MatchGetAll(t *testing.T) {
-	Convey("获取redis中匹配map全部数据", t, func() {
+	Convey("获取redis中匹配集合全部数据", t, func() {
 		all, err := d.MatchGetAll(ctx)
 		So(err, ShouldBeNil)
 		So(all, ShouldNotBeNil)

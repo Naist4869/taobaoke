@@ -91,9 +91,8 @@ func (d *dao) UpdateOrderFailedStatus(ctx context.Context, id string, tradeParen
 	if err != nil {
 		return err
 	}
-	if _, err = d.DelFromMatchCache(ctx, []string{tradeParentID}); err != nil {
+	if _, err := d.REMFromMatchSet(ctx, tradeParentID); err != nil {
 		d.logger.Error("UpdateOrderFailedStatus", zap.Error(err), zap.String("tradeParentID", id))
-		err = nil
 	}
 	return
 }
@@ -114,9 +113,8 @@ func (d *dao) UpdateOrderBalanceStatus(ctx context.Context, id string, tradePare
 	if err != nil {
 		return
 	}
-	if _, err = d.DelFromMatchCache(ctx, []string{tradeParentID}); err != nil {
+	if _, err := d.REMFromMatchSet(ctx, tradeParentID); err != nil {
 		d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("tradeParentID", tradeParentID))
-		err = nil
 	}
 	//todo 暂时先这样 没做用户钱包
 	notWithDraw, err := d.QueryNotWithDrawOrderByUserID(ctx, afterOrder.UserID)
@@ -129,18 +127,20 @@ func (d *dao) UpdateOrderBalanceStatus(ctx context.Context, id string, tradePare
 	for _, order := range notWithDraw {
 		balance += order.Salary
 	}
+	go tools.Retry(func() (err error, mayRetry bool) {
+		if _, err = d.BalanceTemplateMsgSend(ctx, &pb.BalanceTemplateMsgSendReq{
+			UserID:      afterOrder.UserID,
+			OrderID:     afterOrder.TradeParentID,
+			Title:       afterOrder.Title,
+			EarningTime: afterOrder.EarningTime.String(),
+			Salary:      strconv.FormatFloat(float64(afterOrder.Salary)/100, 'f', -1, 64),
+			Balance:     strconv.FormatFloat(float64(balance)/100, 'f', -1, 64),
+		}); err != nil {
+			d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("ID", id))
+		}
+		return err, true
+	})
 
-	if _, err = d.BalanceTemplateMsgSend(ctx, &pb.BalanceTemplateMsgSendReq{
-		UserID:      afterOrder.UserID,
-		OrderID:     afterOrder.TradeParentID,
-		Title:       afterOrder.Title,
-		EarningTime: afterOrder.EarningTime.String(),
-		Salary:      strconv.FormatFloat(float64(afterOrder.Salary)/100, 'f', -1, 64),
-		Balance:     strconv.FormatFloat(float64(balance)/100, 'f', -1, 64),
-	}); err != nil {
-		d.logger.Error("UpdateOrderBalanceStatus", zap.Error(err), zap.String("ID", id))
-		err = nil
-	}
 	return
 }
 

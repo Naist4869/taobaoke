@@ -25,6 +25,7 @@ const (
 	_orderMap = "order_map"
 	// tradeParentID -> order
 	_matchMap = "match_map"
+	_matchSet = "match_set"
 	_unmatch  = "unmatch:%d.%d"
 	_tkl      = "tkl:%s"
 	redisOK   = "OK"
@@ -266,31 +267,43 @@ func (d *dao) GetAllUnmatch(ctx context.Context) (map[string]*model.Order, error
 	return all, nil
 }
 
+//func (d *dao) MatchGetAll(ctx context.Context) ([]*model.Order, error) {
+//	iter := d.redis.HScan(ctx, _matchMap, 0, "", 0).Iterator()
+//	all := make([]*model.Order, 0)
+//	kvSlice := make([]string, 0)
+//	for iter.Next(ctx) {
+//		kvSlice = append(kvSlice, iter.Val())
+//	}
+//	if err := iter.Err(); err != nil {
+//		return nil, err
+//	}
+//	for i := 1; i < len(kvSlice); i += 2 {
+//		if kvSlice[i] == cacheNull {
+//			continue
+//		}
+//		v := &model.Order{}
+//		if err := json.Unmarshal([]byte(kvSlice[i]), v); err != nil {
+//			d.logger.Error("MatchGetAll", zap.Error(err), zap.String("值", iter.Val()))
+//			continue
+//		}
+//		all = append(all, v)
+//	}
+//	return all, nil
+//}
+
 func (d *dao) MatchGetAll(ctx context.Context) ([]*model.Order, error) {
-	iter := d.redis.HScan(ctx, _matchMap, 0, "", 0).Iterator()
-	all := make([]*model.Order, 0)
-	kvSlice := make([]string, 0)
+	var tradeParentIDs []string
+	iter := d.redis.SScan(ctx, _matchSet, 0, "", 0).Iterator()
 	for iter.Next(ctx) {
-		kvSlice = append(kvSlice, iter.Val())
+		tradeParentIDs = append(tradeParentIDs, iter.Val())
 	}
 	if err := iter.Err(); err != nil {
 		return nil, err
 	}
-	for i := 1; i < len(kvSlice); i += 2 {
-		if kvSlice[i] == cacheNull {
-			continue
-		}
-		v := &model.Order{}
-		if err := json.Unmarshal([]byte(kvSlice[i]), v); err != nil {
-			d.logger.Error("MatchGetAll", zap.Error(err), zap.String("值", iter.Val()))
-			continue
-		}
-		all = append(all, v)
-	}
-	return all, nil
+	return d.QueryOrderByTradeParentID(ctx, tradeParentIDs, true)
 }
 
-func (d *dao) DelFromMatchCache(ctx context.Context, tradeParentIDs []string) (n int64, err error) {
+func (d *dao) DelFromMatchCache(ctx context.Context, tradeParentIDs ...string) (n int64, err error) {
 	if len(tradeParentIDs) == 0 {
 		return
 	}
@@ -311,19 +324,33 @@ func (d *dao) PSubscribeKeyspace() <-chan *redis.Message {
 	return subscribe.Channel()
 }
 
+//func (d *dao) DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error) {
+//	itemID := order.ItemID
+//	adZoneID := order.AdzoneID
+//	tradeParentID := order.TradeParentID
+//	marshal, err := json.Marshal(order)
+//	if err != nil {
+//		err = fmt.Errorf("DelFromUnmatchAndSetToMatch failed error: (%w),order: %v", err, order)
+//		return
+//	}
+//	key := unmatchKey(itemID, adZoneID)
+//	pipeline := d.redis.TxPipeline()
+//	del := pipeline.Del(ctx, key)
+//	set := pipeline.HSet(ctx, _matchMap, tradeParentID, marshal)
+//	_, err = pipeline.Exec(ctx)
+//	if err != nil {
+//		err = fmt.Errorf("DelFromUnmatchAndSetToMatch failed error: (%w),order: %v", err, order)
+//		return
+//	}
+//	ok = del.Val() == 1 && set.Val() == 1
+//	return
+//}
+
 func (d *dao) DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Order) (ok bool, err error) {
-	itemID := order.ItemID
-	adZoneID := order.AdzoneID
-	tradeParentID := order.TradeParentID
-	marshal, err := json.Marshal(order)
-	if err != nil {
-		err = fmt.Errorf("DelFromUnmatchAndSetToMatch failed error: (%w),order: %v", err, order)
-		return
-	}
-	key := unmatchKey(itemID, adZoneID)
+	key := unmatchKey(order.ItemID, order.AdzoneID)
 	pipeline := d.redis.TxPipeline()
 	del := pipeline.Del(ctx, key)
-	set := pipeline.HSet(ctx, _matchMap, tradeParentID, marshal)
+	set := pipeline.SAdd(ctx, _matchSet, order.TradeParentID)
 	_, err = pipeline.Exec(ctx)
 	if err != nil {
 		err = fmt.Errorf("DelFromUnmatchAndSetToMatch failed error: (%w),order: %v", err, order)
@@ -331,6 +358,10 @@ func (d *dao) DelFromUnmatchAndSetToMatch(ctx context.Context, order *model.Orde
 	}
 	ok = del.Val() == 1 && set.Val() == 1
 	return
+}
+func (d *dao) REMFromMatchSet(ctx context.Context, tradeParentID ...string) (n int64, err error) {
+	rem := d.redis.SRem(ctx, _matchSet, tradeParentID)
+	return rem.Val(), rem.Err()
 }
 func (d *dao) HSetNXToMatch(ctx context.Context, order *model.Order) (ok bool, err error) {
 	marshal, err := json.Marshal(order)

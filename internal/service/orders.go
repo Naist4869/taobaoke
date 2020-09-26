@@ -155,11 +155,12 @@ func (o *orders) makeMatched(localOrder *model.Order, remoteOrder TbkOrderDetail
 		return err
 	}
 
-	if _, err = o.dao.DelFromUnmatchAndSetToMatch(context.Background(), localOrder); err != nil {
-		o.logger.Error("makeMatched", zap.Error(err))
-		err = nil
+	if ok, err := o.dao.DelFromUnmatchAndSetToMatch(context.Background(), localOrder); err != nil || !ok {
+		// 这里用局部变量err 出错了打个日志然后继续流程
+		o.logger.Error("makeMatched", zap.Error(err), zap.Bool("是否成功", ok))
 	}
-	tools.Retry(func() (err error, mayRetry bool) {
+
+	go tools.Retry(func() (err error, mayRetry bool) {
 		_, err = o.dao.MatchedTemplateMsgSend(context.Background(), &pb.MatchedTemplateMsgSendReq{
 			UserID:           localOrder.UserID,
 			OrderID:          localOrder.TradeParentID,

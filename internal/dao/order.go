@@ -35,7 +35,7 @@ type OrderDataService interface {
 	OrderMatchService
 	OrderMonitor
 	QueryOrderByStatus(ctx context.Context, start, end tools.Time, status ...model.OrderStatus) ([]*model.Order, error)
-	QueryNotWithDrawOrderByUserID(ctx context.Context, id string) (result []*model.Order, err error)
+	QueryNotWithDrawOrderByUserID(ctx context.Context, userID string) (result []*model.Order, err error)
 	UpdateSingleOrderGeneric(ctx context.Context, id string, additionalFilter, operation bson.M) (err error)
 }
 type OrderMonitor interface {

@@ -9,6 +9,8 @@ import (
 	"taobaoke/tools"
 	"time"
 
+	"github.com/go-kratos/kratos/pkg/sync/pipeline/fanout"
+
 	"github.com/go-kratos/kratos/pkg/net/rpc/warden"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
@@ -26,7 +28,6 @@ import (
 	"github.com/go-kratos/kratos/pkg/cache/memcache"
 	"github.com/go-kratos/kratos/pkg/conf/paladin"
 	"github.com/go-kratos/kratos/pkg/database/sql"
-	"github.com/go-kratos/kratos/pkg/sync/pipeline/fanout"
 	xtime "github.com/go-kratos/kratos/pkg/time"
 
 	"github.com/google/wire"

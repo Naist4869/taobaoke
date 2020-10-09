@@ -51,13 +51,17 @@ func initRouter(e *bm.Engine) {
 	{
 		g.GET("/start", howToStart)
 	}
-	e.GET(path.Join("/css", "/*filepath"), createStaticHandler("/css", http.Dir("res/css")))
-	e.HEAD(path.Join("/css", "/*filepath"), createStaticHandler("/css", http.Dir("res/css")))
+	{
+		g := e.Group("/m")
+		g.GET(path.Join("/css", "/*filepath"), createStaticHandler("/m/css", http.Dir("res/css")))
+		g.HEAD(path.Join("/css", "/*filepath"), createStaticHandler("/m/css", http.Dir("res/css")))
 
-	e.GET(path.Join("/js", "/*filepath"), createStaticHandler("/js", http.Dir("res/js")))
-	e.HEAD(path.Join("/js", "/*filepath"), createStaticHandler("/js", http.Dir("res/js")))
+		g.GET(path.Join("/js", "/*filepath"), createStaticHandler("/m/js", http.Dir("res/js")))
+		g.HEAD(path.Join("/js", "/*filepath"), createStaticHandler("/m/js", http.Dir("res/js")))
 
-	e.GET("/item", item)
+		g.GET("/item", item)
+	}
+
 }
 
 func item(c *bm.Context) {

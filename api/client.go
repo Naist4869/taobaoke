@@ -16,7 +16,7 @@ const AppID = "TODO: ADD APP ID"
 //  27.155.87.89
 func NewClient(cfg *warden.ClientConfig, opts ...grpc.DialOption) (WechatClient, error) {
 	client := warden.NewClient(cfg, opts...)
-	cc, err := client.Dial(context.Background(), fmt.Sprintf("direct://default/27.155.87.89:56285"))
+	cc, err := client.Dial(context.Background(), fmt.Sprintf("direct://default/wechat-svc:8001"))
 	if err != nil {
 		return nil, err
 	}

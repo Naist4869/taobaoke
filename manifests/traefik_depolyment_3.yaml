@@ -39,7 +39,8 @@ spec:
             - --certificatesresolvers.myresolver.acme.storage=acme.json  # 你可以挂载到pv 如果pod重启了他会再次去申请证书  但是letsencrypt次数有限制
             # Please note that this is the staging Let's Encrypt server.
             # Once you get things working, you should remove that whole line altogether.
-            - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+#            - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+
           envFrom:
             - secretRef:
 ## kubectl create secret generic traefik-alidns-secret --from-literal=ALICLOUD_ACCESS_KEY={key} --from-literal=ALICLOUD_SECRET_KEY={secret} --from-literal=ALICLOUD_REGION_ID=cn-beijing
@@ -62,28 +63,3 @@ spec:
             limits:
               cpu: "200m"
               memory: "100Mi"
----
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  namespace: default
-  name: whoami
-  labels:
-    app: whoami
-
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: whoami
-  template:
-    metadata:
-      labels:
-        app: whoami
-    spec:
-      containers:
-        - name: whoami
-          image: containous/whoami
-          ports:
-            - name: web
-              containerPort: 80

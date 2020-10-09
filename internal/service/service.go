@@ -239,20 +239,18 @@ func (s *Service) MonitorMarch() {
 
 // 订单状态变更监控 实现有两种  一种是提现的时候才查单   一种是每个小时都查一边数据库里的单 目前先实现第一种吧 因为是实时的
 func (s *Service) WithDraw(ctx context.Context, req *pb.WithDrawReq) (*pb.WithDrawResp, error) {
-
 	orders, err := s.dao.QueryNotWithDrawOrderByUserID(ctx, req.UserID)
 	if err != nil {
 		return nil, err
 	}
+
 	remoteOrders, err := s.QueryRemoteOrderByTradeParentID(ctx, orders)
 	if err != nil {
 		return nil, err
 	}
 	ordersMap := make(map[string]*model.Order, len(orders))
 	for _, order := range orders {
-		if _, ok := remoteOrders.Load(order.ID); ok {
-			ordersMap[order.ID] = order
-		}
+		ordersMap[order.ID] = order
 	}
 	var totalSalary float64
 	var withdrawSlice []string
@@ -260,33 +258,31 @@ func (s *Service) WithDraw(ctx context.Context, req *pb.WithDrawReq) (*pb.WithDr
 		id := key.(string)
 		remoteOrder := value.(TbkOrderDetailsGetResult)
 		localOrder := ordersMap[id]
+
 		if !localOrder.Status.Balance() {
 			if model.OrderStatus(remoteOrder.TkStatus).Balance() {
 				s.dao.UpdateStatus(ctx, localOrder, &remoteOrder, s.GetSalaryScale())
+				// 用objcache
 				afterOrder, err := s.dao.FindOrderByID(ctx, localOrder.ID)
 				if err != nil {
+					delete(ordersMap, id)
 					s.logger.Error("WithDraw", zap.Error(err), zap.Any("localOrder", localOrder), zap.Any("RemoteOrder", remoteOrder))
 					return true
 				}
-				if afterOrder.Salary == 0 {
-					s.logger.Error("WithDraw", zap.String("原因", "返给用户的金额为0"), zap.Any("localOrder", localOrder), zap.Any("RemoteOrder", remoteOrder))
-					return true
-				}
-				totalSalary += float64(afterOrder.Salary)
-				withdrawSlice = append(withdrawSlice, afterOrder.ID)
-				return true
+				ordersMap[id] = afterOrder
 			}
-			return true
-		} else {
-			if localOrder.Salary == 0 {
-				s.logger.Error("WithDraw", zap.String("原因", "返给用户的金额为0"), zap.Any("localOrder", localOrder), zap.Any("RemoteOrder", remoteOrder))
-				return true
-			}
-			totalSalary += float64(localOrder.Salary)
-			withdrawSlice = append(withdrawSlice, localOrder.ID)
-			return true
 		}
+		return true
 	})
+	for _, order := range ordersMap {
+		if order.Salary == 0 {
+			s.logger.Error("WithDraw", zap.String("原因", "返给用户的金额为0"))
+			continue
+		}
+		totalSalary += float64(order.Salary)
+		withdrawSlice = append(withdrawSlice, order.ID)
+	}
+
 	err = s.dao.UpdateManyWithDrawStatus(ctx, withdrawSlice)
 	if err != nil {
 		s.logger.Error("WithDraw", zap.Error(err), zap.Strings("待更新的withdrawSlice", withdrawSlice))
@@ -308,6 +304,10 @@ func (s *Service) QueryRemoteOrderByTradeParentID(ctx context.Context, orders []
 		order := v
 		if order.CreateTime.IsZero() {
 			s.logger.Error("QueryRemoteOrderByTradeParentID", zap.String("原因", "发现待查寻的单没有创建时间"))
+			continue
+		}
+		if order.CreateTime.Before(order.CreateTime.Add(-time.Hour * 24 * 90)) {
+			s.logger.Warn("QueryRemoteOrderByTradeParentID", zap.String("原因", "发现待查寻的单创建时间在3个月前"))
 			continue
 		}
 		group.Go(func(ctx context.Context) error {

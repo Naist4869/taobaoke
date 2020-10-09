@@ -26,7 +26,7 @@ type HandlerFunc func(*Context)
 
 func (c *Context) Next() {
 	defer func() {
-		if _, err := c.engine.DelFromMatchCache(c.ctx, []string{c.localOrder.TradeParentID}); err != nil {
+		if _, err := c.engine.DelFromMatchCache(c.ctx, c.localOrder.TradeParentID); err != nil {
 			c.logger.Error("UpdateStatus", zap.Error(err), zap.String("tradeParentID", c.localOrder.TradeParentID))
 		}
 	}()
